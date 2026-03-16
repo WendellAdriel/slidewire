@@ -148,6 +148,22 @@
         .slidewire-content .slidewire-diagram { background: transparent; opacity: 0; color: transparent; }
         .slidewire-content .slidewire-diagram[data-processed] { opacity: 1; transition: opacity .6s ease-out .1s; }
         .slidewire-content .slidewire-diagram svg { max-width: 100%; height: auto; }
+        .slidewire-text { display: block; }
+        .slidewire-image { display: block; max-width: 100%; height: auto; }
+        .slidewire-text-vertical { writing-mode: vertical-rl; text-orientation: mixed; }
+        .slidewire-typewriter { display: inline-block; white-space: nowrap; overflow: hidden; }
+        .slidewire-typewriter::after { content: ''; display: inline-block; width: 0.08em; height: 1em; margin-left: 0.12em; vertical-align: -0.12em; background: currentColor; animation: slidewire-caret 1s step-end infinite; }
+
+        @@keyframes slidewire-caret {
+            0%, 50% { opacity: 1; }
+            50.01%, 100% { opacity: 0; }
+        }
+
+        @@media (prefers-reduced-motion: reduce) {
+            .slidewire-fragment { transition: none; transform: none; }
+            .slidewire-content .slidewire-diagram[data-processed] { transition: none; }
+            .slidewire-typewriter::after { animation: none; opacity: 0; }
+        }
     </style>
 
     @script
@@ -176,12 +192,19 @@
                 isTransitioning: false,
                 transitionTimeout: null,
                 autoSlideTimeout: null,
+                reducedMotionQuery: null,
                 init() {
+                    this.reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
                     this.syncFromHash();
                     this.refreshFragments();
                     this.setupAutoSlide();
                     this.renderDiagrams();
                     this.observeDiagrams();
+
+                    this.$nextTick(() => {
+                        this.resetAnimatedNodes(this.activeSlide());
+                        this.playElementAnimations(this.activeSlide(), 'in');
+                    });
 
                     window.addEventListener('hashchange', () => this.syncFromHash());
                     document.addEventListener('fullscreenchange', () => {
@@ -240,6 +263,10 @@
                         this.playAutoAnimate(oldValue, value);
                         this.setupAutoSlide();
                         this.renderDiagrams();
+                        this.$nextTick(() => {
+                            this.resetAnimatedNodes(this.activeSlide());
+                            this.playElementAnimations(this.activeSlide(), 'in');
+                        });
                     });
 
                     this.$watch('fragment', () => {
@@ -424,6 +451,191 @@
                     }
 
                     return base;
+                },
+                prefersReducedMotion() {
+                    return this.reducedMotionQuery?.matches === true;
+                },
+                animatedNodes(slide) {
+                    if (!slide) {
+                        return [];
+                    }
+
+                    return Array.from(slide.querySelectorAll('[data-slidewire-animate]'));
+                },
+                resetAnimatedNodes(slide) {
+                    this.animatedNodes(slide).forEach((node) => {
+                        if (node._slidewireAnimation) {
+                            node._slidewireAnimation.cancel();
+                            node._slidewireAnimation = null;
+                        }
+
+                        node.classList.remove('slidewire-typewriter');
+                        node.style.opacity = '';
+                        node.style.transform = '';
+                        node.style.filter = '';
+                        node.style.clipPath = '';
+                        node.style.textShadow = '';
+                    });
+                },
+                animationDurationMultiplier(speed) {
+                    if (speed === 'fast') {
+                        return 0.8;
+                    }
+
+                    if (speed === 'default') {
+                        return 1.7;
+                    }
+
+                    return 2.2;
+                },
+                animationOptions(name, speed = 'default') {
+                    const durationMap = {
+                        fade: 1100,
+                        pop: 420,
+                        'zoom-in': 440,
+                        'zoom-out': 440,
+                        'slide-left': 620,
+                        'slide-right': 620,
+                        'slide-up': 620,
+                        'slide-down': 620,
+                        blur: 360,
+                        typewriter: 900,
+                    };
+
+                    const multiplier = this.animationDurationMultiplier(speed);
+
+                    return {
+                        duration: Math.round((durationMap[name] || 280) * multiplier),
+                        easing: name === 'typewriter' ? 'steps(18, end)' : 'cubic-bezier(0.22, 0.61, 0.36, 1)',
+                        fill: 'both',
+                    };
+                },
+                animationKeyframes(name, phase, node) {
+                    const isImage = node.tagName === 'IMG';
+
+                    if (name === 'typewriter' && isImage) {
+                        return null;
+                    }
+
+                    if (name === 'fade') {
+                        return phase === 'in'
+                            ? [{ opacity: 0 }, { opacity: 1 }]
+                            : [{ opacity: 1 }, { opacity: 0 }];
+                    }
+
+                    if (name === 'pop') {
+                        return phase === 'in'
+                            ? [{ opacity: 0, transform: 'scale(0.82)' }, { opacity: 1, transform: 'scale(1)' }]
+                            : [{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(0.92)' }];
+                    }
+
+                    if (name === 'zoom-in') {
+                        return phase === 'in'
+                            ? [{ opacity: 0, transform: 'scale(1.16)' }, { opacity: 1, transform: 'scale(1)' }]
+                            : [{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(1.08)' }];
+                    }
+
+                    if (name === 'zoom-out') {
+                        return phase === 'in'
+                            ? [{ opacity: 0, transform: 'scale(0.84)' }, { opacity: 1, transform: 'scale(1)' }]
+                            : [{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(0.84)' }];
+                    }
+
+                    if (name === 'slide-left') {
+                        return phase === 'in'
+                            ? [{ opacity: 0, transform: 'translateX(2rem)' }, { opacity: 1, transform: 'translateX(0)' }]
+                            : [{ opacity: 1, transform: 'translateX(0)' }, { opacity: 0, transform: 'translateX(-2rem)' }];
+                    }
+
+                    if (name === 'slide-right') {
+                        return phase === 'in'
+                            ? [{ opacity: 0, transform: 'translateX(-2rem)' }, { opacity: 1, transform: 'translateX(0)' }]
+                            : [{ opacity: 1, transform: 'translateX(0)' }, { opacity: 0, transform: 'translateX(2rem)' }];
+                    }
+
+                    if (name === 'slide-up') {
+                        return phase === 'in'
+                            ? [{ opacity: 0, transform: 'translateY(2rem)' }, { opacity: 1, transform: 'translateY(0)' }]
+                            : [{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(-2rem)' }];
+                    }
+
+                    if (name === 'slide-down') {
+                        return phase === 'in'
+                            ? [{ opacity: 0, transform: 'translateY(-2rem)' }, { opacity: 1, transform: 'translateY(0)' }]
+                            : [{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(2rem)' }];
+                    }
+
+                    if (name === 'blur') {
+                        return phase === 'in'
+                            ? [{ opacity: 0, filter: 'blur(18px)' }, { opacity: 1, filter: 'blur(0)' }]
+                            : [{ opacity: 1, filter: 'blur(0)' }, { opacity: 0, filter: 'blur(18px)' }];
+                    }
+
+                    if (name === 'typewriter') {
+                        return phase === 'in'
+                            ? [
+                                { opacity: 1, clipPath: 'inset(0 100% 0 0)' },
+                                { opacity: 1, clipPath: 'inset(0 0 0 0)' },
+                            ]
+                            : [{ opacity: 1 }, { opacity: 0 }];
+                    }
+
+                    return null;
+                },
+                playElementAnimations(slide, phase) {
+                    const nodes = this.animatedNodes(slide);
+
+                    if (nodes.length === 0) {
+                        return;
+                    }
+
+                    if (this.prefersReducedMotion()) {
+                        this.resetAnimatedNodes(slide);
+
+                        return;
+                    }
+
+                    nodes.forEach((node, nodeIndex) => {
+                        const animationName = phase === 'in' ? (node.dataset.animation || '') : '';
+                        const keyframes = this.animationKeyframes(animationName, phase, node);
+
+                        if (!animationName || keyframes === null) {
+                            return;
+                        }
+
+                        if (animationName === 'typewriter' && phase === 'in') {
+                            node.classList.add('slidewire-typewriter');
+                        }
+
+                        const animationSpeed = node.dataset.animationSpeed || 'default';
+                        const options = this.animationOptions(animationName, animationSpeed);
+                        const animation = node.animate(keyframes, {
+                            ...options,
+                            delay: phase === 'in' ? nodeIndex * 50 : 0,
+                        });
+
+                        node._slidewireAnimation = animation;
+
+                        animation.finished
+                            .catch(() => {})
+                            .finally(() => {
+                                if (node._slidewireAnimation === animation) {
+                                    node._slidewireAnimation = null;
+                                }
+
+                                if (phase === 'out' || animationName !== 'typewriter') {
+                                    node.classList.remove('slidewire-typewriter');
+                                }
+
+                                if (phase === 'out') {
+                                    node.style.opacity = '';
+                                    node.style.transform = '';
+                                    node.style.filter = '';
+                                    node.style.clipPath = '';
+                                    node.style.textShadow = '';
+                                }
+                            });
+                    });
                 },
                 playTransition(oldIndex, newIndex) {
                     if (oldIndex === undefined || oldIndex === null || oldIndex === newIndex) {

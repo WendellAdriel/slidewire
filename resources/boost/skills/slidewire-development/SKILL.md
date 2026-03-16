@@ -6,7 +6,7 @@ metadata:
 
 # SlideWire Development
 
-Use this skill when working with `wendelladriel/slidewire`: creating new presentations, improving existing decks, adding navigation-friendly structure, or styling slides with themes, markdown, code, diagrams, and fragments.
+Use this skill when working with `wendelladriel/slidewire`: creating new presentations, improving existing decks, adding navigation-friendly structure, or styling slides with themes, text, images, markdown, code, diagrams, and fragments.
 
 ## Start with the SlideWire workflow
 
@@ -64,16 +64,88 @@ Strong defaults:
 - `<x-slidewire::slide>`: a single slide, with support for metadata like `theme`, `transition`, `transition-speed`, `auto-slide`, `auto-animate`, and background attributes.
 - `<x-slidewire::vertical-slide>`: groups slides into a vertical stack inside one horizontal column.
 - `<x-slidewire::fragment>`: reveals content progressively.
+- `<x-slidewire::text>`: semantic text wrapper with optional orientation and component-level animation hooks.
+- `<x-slidewire::image>`: native image wrapper with component-level animation hooks.
 - `<x-slidewire::markdown>`: renders markdown and highlighted code fences.
 - `<x-slidewire::code>`: renders highlighted code blocks directly.
 - `<x-slidewire::diagram>`: renders Mermaid diagrams.
 
 ### When to use each content component
 
+- Use `text` for semantic headings, paragraphs, inline text, vertical labels, or reusable animation-ready copy blocks.
+- Use `image` for native `<img>` output with SlideWire animation metadata.
 - Use `markdown` for narrative slides, bullets, and mixed prose/code.
 - Use `code` for tightly controlled code examples or language-specific snippets.
 - Use `diagram` for flows, architecture, and process explanations.
 - Use `fragment` for sequential reveals instead of overcrowding one slide.
+
+### Text component guidance
+
+Use `text` when you want semantic text output without hand-writing repeated animation and orientation attributes.
+
+Supported attributes:
+
+- `type`: `paragraph` (default), `inline`, `heading`
+- `orientation`: `horizontal` (default), `vertical`
+- `animation`
+- `animation-speed`
+- `class` and any other valid HTML attributes for the rendered tag
+
+Examples:
+
+```blade
+<x-slidewire::text type="heading" class="text-5xl font-semibold tracking-tight">
+    Product Launch
+</x-slidewire::text>
+```
+
+```blade
+<x-slidewire::text
+    type="heading"
+    orientation="vertical"
+    animation="slide-up"
+    animation-speed="slow"
+    class="text-4xl"
+>
+    Launch Day
+</x-slidewire::text>
+```
+
+Recommendations:
+
+- Prefer `heading` for prominent slide titles when `h2` semantics make sense.
+- Prefer `inline` for short labels embedded in richer layouts.
+- Use `orientation="vertical"` for side labels or editorial layouts, not long paragraphs.
+- Fall back to raw HTML when you need fully custom markup.
+
+### Image component guidance
+
+Use `image` when you want a normal `<img>` element with the same animation contract as other SlideWire content components.
+
+Supported attributes:
+
+- all standard image attributes like `src`, `alt`, `class`, `width`, `height`, `loading`, `decoding`, and `fetchpriority`
+- `animation`
+- `animation-speed`
+
+Example:
+
+```blade
+<x-slidewire::image
+    src="/images/product-shot.png"
+    alt="Product shot"
+    class="w-72 rounded-2xl shadow-2xl"
+    loading="lazy"
+    animation="pop"
+    animation-speed="default"
+/>
+```
+
+Recommendations:
+
+- Always provide meaningful `alt` text unless the image is purely decorative.
+- Keep sizing intentional with Tailwind classes or width/height attributes.
+- Use native image attributes directly instead of expecting PHP-side prop mapping.
 
 ## Structure slides for presentation flow
 
@@ -218,6 +290,31 @@ Recommendations:
 - Use `auto-animate` for before/after or transformation sequences with matching element IDs.
 - Use `auto-slide` sparingly for timed demos or kiosk-style decks.
 
+### Component-level animations
+
+`text` and `image` support element-level entry animations through `animation` and `animation-speed`.
+
+Supported names:
+
+- `fade`
+- `pop`
+- `zoom-in`
+- `zoom-out`
+- `slide-left`
+- `slide-right`
+- `slide-up`
+- `slide-down`
+- `blur`
+- `typewriter` (`text` only)
+
+Recommendations:
+
+- Use element animations to emphasize key content inside a slide, not every element on the slide.
+- Keep animation choices consistent within a deck.
+- Reserve `typewriter` for short plain-text copy, not complex nested markup.
+- Avoid relying on component animations as the only way content becomes understandable.
+- Remember reduced-motion users may see the final state without the animation effect.
+
 ## Build content for presenters, not just readers
 
 ### Fragments
@@ -293,6 +390,7 @@ When creating or updating a SlideWire presentation, verify that:
 - deck defaults are used for shared behavior instead of repeated slide attributes
 - text contrast, spacing, and layout are clear on both dark and light backgrounds
 - fragments improve pacing instead of hiding essential context
+- text and image components are used where their semantics or animation hooks improve authoring clarity
 - code, markdown, and diagram slides use the most appropriate component
 - route registration points to the correct presentation key
 
@@ -302,6 +400,7 @@ When creating or updating a SlideWire presentation, verify that:
 - Keep presentations in one Blade file per deck.
 - Use deck-level theme and transition defaults first.
 - Use Tailwind classes for slide composition and atmosphere.
+- Use `text` and `image` when you want semantic wrappers with built-in animation metadata.
 - Use vertical slides for drill-downs, not for unrelated content.
 - Use fragments to pace the narrative.
 - Use markdown for fast authoring, `code` for exact snippets, and `diagram` for visual structure.

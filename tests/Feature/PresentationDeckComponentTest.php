@@ -170,3 +170,42 @@ it('includes renderDiagrams method in deck JavaScript', function (): void {
 
     expect($content)->toContain('renderDiagrams');
 });
+
+it('renders text and image components inside a real deck', function (): void {
+    Route::slidewire('/slides/component-animations', 'component-animations');
+
+    test()->get('/slides/component-animations')
+        ->assertSuccessful()
+        ->assertSee('Launch Day')
+        ->assertSee('Product reveal')
+        ->assertSee('Product shot');
+});
+
+it('preserves component animation metadata and vertical text hooks in deck output', function (): void {
+    Route::slidewire('/slides/component-animations', 'component-animations');
+
+    $content = test()->get('/slides/component-animations')->getContent();
+
+    expect($content)
+        ->toContain('data-slidewire-animate="true"')
+        ->toContain('data-animation="slide-up"')
+        ->toContain('data-animation="pop"')
+        ->toContain('data-animation-speed="default"')
+        ->toContain('data-animation-speed="fast"')
+        ->toContain('slidewire-text-vertical')
+        ->toContain('data-orientation="vertical"');
+});
+
+it('includes element animation helper logic in deck JavaScript', function (): void {
+    Route::slidewire('/slides/component-animations', 'component-animations');
+
+    $content = test()->get('/slides/component-animations')->getContent();
+
+    expect($content)
+        ->toContain('animatedNodes(slide)')
+        ->toContain('playElementAnimations(slide, phase)')
+        ->toContain('animationKeyframes(name, phase, node)')
+        ->toContain('animationDurationMultiplier(speed)')
+        ->toContain('resetAnimatedNodes(slide)')
+        ->toContain('prefers-reduced-motion: reduce');
+});

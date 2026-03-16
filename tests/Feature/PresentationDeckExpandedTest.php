@@ -122,3 +122,15 @@ it('preserves vertical scroll gestures before triggering vertical navigation', f
         ->toContain('shouldPreserveVerticalScroll')
         ->toContain('canScrollActiveSlide');
 });
+
+it('includes package css hooks for text, image, and typewriter animations', function (): void {
+    Route::slidewire('/slides/component-animations', 'component-animations');
+
+    $content = test()->get('/slides/component-animations')->getContent();
+
+    expect($content)
+        ->toContain('.slidewire-text')
+        ->toContain('.slidewire-image')
+        ->toContain('.slidewire-text-vertical')
+        ->toContain('.slidewire-typewriter');
+});
