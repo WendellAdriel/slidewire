@@ -76,14 +76,20 @@ class PresentationDeck extends Component
             return;
         }
 
-        $this->activeIndex = max($this->activeIndex - 1, 0);
-        $this->activeFragment = -1;
+        $previousIndex = max($this->activeIndex - 1, 0);
+
+        if ($previousIndex === $this->activeIndex) {
+            return;
+        }
+
+        $this->activeIndex = $previousIndex;
+        $this->activeFragment = max($this->slides[$this->activeIndex]->fragments - 1, -1);
     }
 
-    public function goToSlide(int $index): void
+    public function goToSlide(int $index, int $fragment = -1): void
     {
         $this->activeIndex = $this->normalizeIndex($index);
-        $this->activeFragment = -1;
+        $this->activeFragment = $fragment;
     }
 
     public function navigateDown(): void

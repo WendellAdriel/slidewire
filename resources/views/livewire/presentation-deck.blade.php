@@ -89,7 +89,7 @@
 
         @if($showControls)
             <nav class="slidewire-controls" aria-label="Slide controls">
-                <button type="button" x-on:click.stop="navigateLeft()" aria-label="Previous slide" class="slidewire-control-arrow slidewire-control-left" :disabled="!canGoLeft()">
+                <button type="button" x-on:click.stop="previous()" aria-label="Previous slide" class="slidewire-control-arrow slidewire-control-left" :disabled="!canGoLeft()">
                     <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
                 </button>
                 @if($hasVerticalSlides)
@@ -100,7 +100,7 @@
                         <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
                     </button>
                 @endif
-                <button type="button" x-on:click.stop="navigateRight()" aria-label="Next slide" class="slidewire-control-arrow slidewire-control-right" :disabled="!canGoRight()">
+                <button type="button" x-on:click.stop="next()" aria-label="Next slide" class="slidewire-control-arrow slidewire-control-right" :disabled="!canGoRight()">
                     <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
                 </button>
                 @if($showFullscreenButton)
@@ -206,7 +206,7 @@
                         this.playElementAnimations(this.activeSlide(), 'in');
                     });
 
-                    window.addEventListener('hashchange', () => this.syncFromHash());
+                    window.addEventListener('popstate', () => this.syncFromHash());
                     document.addEventListener('fullscreenchange', () => {
                         this.isFullscreen = document.fullscreenElement !== null;
                     });
@@ -258,6 +258,7 @@
 
                     this.$watch('index', (value, oldValue) => {
                         this.updateHash();
+                        this.scrollActiveSlideIntoView(value);
                         this.playTransition(oldValue, value);
                         this.refreshFragments();
                         this.playAutoAnimate(oldValue, value);
@@ -270,6 +271,7 @@
                     });
 
                     this.$watch('fragment', () => {
+                        this.updateHash();
                         this.refreshFragments();
                         this.setupAutoSlide();
                     });
@@ -355,13 +357,13 @@
                     event.preventDefault();
 
                     if (direction === 'right') {
-                        this.navigateRight();
+                        this.next();
 
                         return;
                     }
 
                     if (direction === 'left') {
-                        this.navigateLeft();
+                        this.previous();
 
                         return;
                     }
@@ -374,14 +376,25 @@
 
                     this.navigateUp();
                 },
-                updateHash() {
+                buildHash() {
                     const { h, v } = this.currentCoords();
+                    const f = this.fragment;
+                    let hash;
 
                     if (v > 0) {
-                        window.location.hash = `#/slide/${h + 1}/${v + 1}`;
+                        hash = `#/slide/${h + 1}/${v + 1}`;
                     } else {
-                        window.location.hash = `#/slide/${h + 1}`;
+                        hash = `#/slide/${h + 1}`;
                     }
+
+                    if (f > -1) {
+                        hash += `/f/${f}`;
+                    }
+
+                    return hash;
+                },
+                updateHash() {
+                    history.pushState(null, '', this.buildHash());
                 },
                 frameClass(slideIndex) {
                     if (slideIndex === this.index) {
@@ -400,7 +413,13 @@
 
                     return classes || '';
                 },
+                parseFragmentFromHash() {
+                    const fMatch = window.location.hash.match(/\/f\/(\d+)/);
+
+                    return fMatch ? Number(fMatch[1]) : -1;
+                },
                 syncFromHash() {
+                    const fragment = this.parseFragmentFromHash();
                     const match2d = window.location.hash.match(/#\/slide\/(\d+)\/(\d+)/);
 
                     if (match2d) {
@@ -410,7 +429,7 @@
 
                         if (target >= 0) {
                             this.captureAutoAnimateSnapshot(target);
-                            this.$wire.goToSlide(target);
+                            this.$wire.goToSlide(target, fragment);
                         }
 
                         return;
@@ -424,7 +443,7 @@
 
                         if (target >= 0) {
                             this.captureAutoAnimateSnapshot(target);
-                            this.$wire.goToSlide(target);
+                            this.$wire.goToSlide(target, fragment);
                         }
                     }
                 },
@@ -775,6 +794,13 @@
                         scrollHeight: container.scrollHeight,
                     };
                 },
+                scrollActiveSlideIntoView(slideIndex) {
+                    const slide = this.$refs[`slide${slideIndex}`];
+
+                    if (slide) {
+                        slide.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                },
                 canScrollContainer(direction, state) {
                     if (!state || !state.container) {
                         return false;
@@ -1077,13 +1103,25 @@
                         }
 
                         const nodes = slide.querySelectorAll('[data-fragment]');
+                        let lastVisible = null;
 
                         nodes.forEach((node, currentIndex) => {
                             const explicit = node.getAttribute('data-fragment-index');
                             const fragmentIndex = explicit === null ? currentIndex : Number(explicit);
+                            const isVisible = fragmentIndex <= this.fragment;
 
-                            node.classList.toggle('slidewire-fragment-visible', fragmentIndex <= this.fragment);
+                            node.classList.toggle('slidewire-fragment-visible', isVisible);
+
+                            if (isVisible) {
+                                lastVisible = node;
+                            }
                         });
+
+                        if (lastVisible) {
+                            lastVisible.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        } else if (nodes.length > 0) {
+                            slide.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
                     });
                 }
             }
