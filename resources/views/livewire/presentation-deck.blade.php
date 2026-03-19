@@ -186,6 +186,7 @@
                 touchStartX: null,
                 touchStartY: null,
                 touchScrollState: null,
+                hashUpdateQueued: false,
                 isFullscreen: false,
                 autoAnimateSnapshot: null,
                 leavingIndex: null,
@@ -257,7 +258,7 @@
                     }, { passive: true });
 
                     this.$watch('index', (value, oldValue) => {
-                        this.updateHash();
+                        this.queueHashUpdate();
                         this.scrollActiveSlideIntoView(value);
                         this.playTransition(oldValue, value);
                         this.refreshFragments();
@@ -271,7 +272,7 @@
                     });
 
                     this.$watch('fragment', () => {
-                        this.updateHash();
+                        this.queueHashUpdate();
                         this.refreshFragments();
                         this.setupAutoSlide();
                     });
@@ -289,11 +290,19 @@
                     return -1;
                 },
                 canGoLeft() {
+                    if (this.fragment > -1) {
+                        return true;
+                    }
+
                     const { h } = this.currentCoords();
 
                     return h > 0;
                 },
                 canGoRight() {
+                    if (this.fragment < this.fragmentCountForSlide() - 1) {
+                        return true;
+                    }
+
                     const { h } = this.currentCoords();
 
                     return h < this.gridShape.length - 1;
@@ -394,7 +403,25 @@
                     return hash;
                 },
                 updateHash() {
-                    history.pushState(null, '', this.buildHash());
+                    const hash = this.buildHash();
+
+                    if (window.location.hash === hash) {
+                        return;
+                    }
+
+                    history.pushState(null, '', hash);
+                },
+                queueHashUpdate() {
+                    if (this.hashUpdateQueued) {
+                        return;
+                    }
+
+                    this.hashUpdateQueued = true;
+
+                    queueMicrotask(() => {
+                        this.hashUpdateQueued = false;
+                        this.updateHash();
+                    });
                 },
                 frameClass(slideIndex) {
                     if (slideIndex === this.index) {
@@ -779,6 +806,15 @@
                 },
                 activeSlide() {
                     return this.$refs[`slide${this.index}`] || null;
+                },
+                fragmentCountForSlide(slideIndex = this.index) {
+                    const slide = this.$refs[`slide${slideIndex}`];
+
+                    if (!slide) {
+                        return 0;
+                    }
+
+                    return slide.querySelectorAll('[data-fragment]').length;
                 },
                 captureScrollState(target) {
                     const container = this.activeSlide();
