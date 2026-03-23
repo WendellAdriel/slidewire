@@ -56,6 +56,23 @@ Strong defaults:
 - Use slide-level overrides only when a slide should intentionally differ.
 - Use Tailwind classes for layout, spacing, colors, and typography.
 
+## Tailwind setup
+
+SlideWire presentation styling assumes the host Laravel app is using Tailwind CSS.
+
+If a project uses the first-party SlideWire UI components like `panel`, `title-slide`, `two-column-slide`, `timeline-slide`, `steps-slide`, or `agenda-slide`, make sure the app's `resources/css/app.css` includes the package sources so Tailwind can generate the needed classes:
+
+```css
+@import 'tailwindcss';
+
+@source '../views';
+@source '../../vendor/wendelladriel/slidewire/resources/views/**/*.blade.php';
+@source '../../vendor/wendelladriel/slidewire/src/**/*.php';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+```
+
+Without those `@source` entries, package components may render with missing styles even though the Blade markup is correct.
+
 ## Use the right SlideWire components
 
 ### Core components
