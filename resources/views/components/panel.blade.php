@@ -3,7 +3,7 @@
     $bodyClasses = trim($styles['body'] . ' ' . $bodyPadding());
 @endphp
 
-<section {{ $attributes->class([$styles['wrapper']]) }}>
+<div {{ $attributes->class([$styles['wrapper']]) }}>
     @if($overline !== null || $title !== null)
         <header class="{{ $styles['header'] }}">
             @if($overline !== null)
@@ -25,4 +25,4 @@
             <p class="{{ $footerClass() }}">{{ $footer }}</p>
         </footer>
     @endif
-</section>
+</div>

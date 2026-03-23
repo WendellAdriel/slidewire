@@ -37,8 +37,8 @@ class AgendaSlide extends Component
         $tokens = $this->ui->tokens($this->theme);
 
         return match ($this->style) {
-            'cards' => trim('grid gap-4 md:grid-cols-2 rounded-[2rem] border p-5 sm:p-6 ' . $tokens['glass_surface'] . ' ' . $tokens['border']),
-            'timeline' => trim('grid gap-4 rounded-[2rem] border p-5 sm:p-6 ' . $tokens['glass_surface'] . ' ' . $tokens['border']),
+            'cards' => trim('grid grid-cols-1 gap-4 rounded-[2rem] border p-5 sm:p-6 ' . $tokens['glass_surface'] . ' ' . $tokens['border']),
+            'timeline' => trim('grid gap-3 rounded-[2rem] border p-5 sm:p-6 ' . $tokens['glass_surface'] . ' ' . $tokens['border']),
             default => 'grid gap-3',
         };
     }

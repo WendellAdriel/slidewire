@@ -67,10 +67,8 @@ Strong defaults:
 - `<x-slidewire::panel>`: reusable modern surface for grouped content, supporting variants like `default`, `elevated`, `outlined`, and `glass`.
 - `<x-slidewire::title-slide>`: opinionated opening slide for titles, subtitles, overlines, and presenter metadata.
 - `<x-slidewire::two-column-slide>`: responsive split layout for explanation-plus-supporting-content slides.
-- `<x-slidewire::media-split-slide>`: narrative layout with media on one side and content on the other.
 - `<x-slidewire::timeline-slide>` and `<x-slidewire::timeline-item>`: structured milestone and roadmap layouts.
 - `<x-slidewire::steps-slide>` and `<x-slidewire::step-item>`: process and rollout layouts with optional auto-numbering.
-- `<x-slidewire::speaker-slide>`: polished speaker or featured profile layout.
 - `<x-slidewire::agenda-slide>` and `<x-slidewire::agenda-item>`: section overview and agenda layouts.
 - `<x-slidewire::text>`: semantic text wrapper with optional orientation, configured `font` overrides, and component-level animation hooks.
 - `<x-slidewire::image>`: native image wrapper with component-level animation hooks.
@@ -83,10 +81,8 @@ Strong defaults:
 - Use `panel` when content needs a polished surface without rebuilding the same rounded, theme-aware wrapper.
 - Use `title-slide` for opening slides, chapter intros, and title cards.
 - Use `two-column-slide` for explanatory layouts that pair copy with supporting visuals or code.
-- Use `media-split-slide` when one side should feel more visual and the other more narrative.
 - Use `timeline-slide` and `agenda-slide` for milestones, sections, and chapter overviews that need more structure than bullets.
 - Use `steps-slide` for process, rollout, or tutorial content.
-- Use `speaker-slide` for intros, bios, and closing speaker spotlights.
 - Use `text` for semantic headings, paragraphs, inline text, vertical labels, or reusable animation-ready copy blocks.
 - Use `image` for native `<img>` output with SlideWire animation metadata.
 - Use `markdown` for narrative slides, bullets, and mixed prose/code.
@@ -102,10 +98,8 @@ Recommendations:
 
 - Prefer `panel` as the base surface primitive for grouped text, code, media, or mixed content.
 - Prefer `title-slide` over ad hoc hero markup for opening slides or chapter separators.
-- Prefer `two-column-slide` when both sides are flexible content regions.
-- Prefer `media-split-slide` when one side should read as a framed visual area.
+- Prefer `two-column-slide` for both general split layouts and media-plus-content layouts; frame the visual side with `panel` when needed.
 - Prefer `timeline-slide`, `steps-slide`, and `agenda-slide` over plain lists when the sequence or hierarchy matters to the talk.
-- Prefer `speaker-slide` for speaker intros or featured profile moments instead of rebuilding profile layouts from scratch.
 - Still allow local customization through slots and `class` passthrough when a deck needs light visual tailoring.
 
 Example:
@@ -120,7 +114,7 @@ Example:
             variant="glass"
         >
             Build polished decks with reusable surfaces, structured agendas,
-            speaker slides, and narrative split layouts.
+            agenda layouts, and split layouts.
         </x-slidewire::panel>
     </x-slot>
 
@@ -460,7 +454,7 @@ When creating or updating a SlideWire presentation, verify that:
 - Keep presentations in one Blade file per deck.
 - Use deck-level theme and transition defaults first.
 - Use Tailwind classes for slide composition and atmosphere.
-- Use first-party components like `panel`, `title-slide`, `two-column-slide`, `timeline-slide`, `steps-slide`, `speaker-slide`, and `agenda-slide` before rebuilding the same patterns by hand.
+- Use first-party components like `panel`, `title-slide`, `two-column-slide`, `timeline-slide`, `steps-slide`, and `agenda-slide` before rebuilding the same patterns by hand.
 - Use `text` and `image` when you want semantic wrappers with built-in animation metadata.
 - Use vertical slides for drill-downs, not for unrelated content.
 - Use fragments to pace the narrative.

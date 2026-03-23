@@ -15,7 +15,6 @@ class TimelineSlide extends Component
         public UiThemeResolver $ui,
         public ?string $title = null,
         public string $orientation = 'vertical',
-        public string|int|null $highlight = null,
         public ?string $theme = null,
     ) {
         $this->orientation = in_array($this->orientation, ['vertical', 'horizontal'], true) ? $this->orientation : 'vertical';

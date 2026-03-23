@@ -9,6 +9,9 @@ use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 use WendellAdriel\SlideWire\Support\UiThemeResolver;
 
+/**
+ * @deprecated Use TwoColumnSlide and wrap the media side with Panel when needed.
+ */
 class MediaSplitSlide extends Component
 {
     public function __construct(

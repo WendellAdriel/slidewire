@@ -148,10 +148,27 @@ class UiThemeResolver
         ]);
 
         $variantClasses = match ($variant) {
-            'glass' => implode(' ', [$tokens['glass_surface'], $palette['ring']]),
-            'outlined' => implode(' ', ['bg-transparent', $palette['ring']]),
-            'elevated' => implode(' ', [$tokens['surface'], $palette['ring'], 'shadow-[0_28px_90px_rgba(15,23,42,0.18)]']),
-            default => implode(' ', [$tokens['surface'], $palette['ring']]),
+            'glass' => implode(' ', [
+                $tokens['glass_surface'],
+                $palette['ring'],
+                'before:pointer-events-none before:absolute before:inset-0 before:bg-[linear-gradient(135deg,rgba(255,255,255,0.18),transparent_24%,transparent_72%,rgba(255,255,255,0.08))] before:opacity-70',
+                'after:pointer-events-none after:absolute after:inset-x-6 after:top-0 after:h-px after:bg-white/25 after:blur-sm',
+            ]),
+            'outlined' => implode(' ', [
+                'bg-transparent border-dashed',
+                $palette['ring'],
+                'shadow-none',
+            ]),
+            'elevated' => implode(' ', [
+                $this->isLight($theme) ? 'bg-white/96' : 'bg-zinc-950/82',
+                $palette['ring'],
+                'backdrop-blur-sm shadow-[0_18px_30px_rgba(15,23,42,0.22),0_42px_100px_rgba(15,23,42,0.34)] ring-1 ring-inset ring-white/10 before:pointer-events-none before:absolute before:inset-x-5 before:top-0 before:h-10 before:rounded-t-[1.75rem] before:bg-[linear-gradient(180deg,rgba(255,255,255,0.14),transparent)] before:opacity-90',
+            ]),
+            default => implode(' ', [
+                $tokens['muted_surface'],
+                $palette['ring'],
+                'shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] border-white/8',
+            ]),
         };
 
         return [

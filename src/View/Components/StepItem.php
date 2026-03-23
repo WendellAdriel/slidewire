@@ -32,7 +32,7 @@ class StepItem extends Component
         $tokens = $this->ui->tokens($this->theme);
 
         return match ($this->style) {
-            'minimal' => 'flex min-w-0 gap-4',
+            'minimal' => trim('flex min-w-0 items-start gap-3 border-l pl-4 sm:pl-3 ' . $tokens['border']),
             'connected' => trim('flex min-w-0 gap-4 rounded-[1.5rem] border p-4 sm:p-5 ' . $tokens['muted_surface'] . ' ' . $tokens['border']),
             default => trim('flex min-w-0 gap-4 rounded-[1.5rem] border p-4 sm:p-5 ' . $tokens['glass_surface'] . ' ' . $tokens['border'] . ' ' . $tokens['subtle_glow']),
         };
@@ -42,6 +42,37 @@ class StepItem extends Component
     {
         $palette = $this->ui->tone('primary', $this->theme);
 
-        return trim('relative inline-flex size-11 shrink-0 items-center justify-center rounded-full text-sm/6 font-semibold ' . $palette['soft'] . ' ' . $palette['text'] . ' ' . $palette['ring']);
+        return match ($this->style) {
+            'minimal' => trim('relative inline-flex size-7 shrink-0 items-center justify-center rounded-md border text-[0.7rem]/6 font-medium tabular-nums ' . $palette['text'] . ' ' . $palette['ring']),
+            default => trim('relative inline-flex size-11 shrink-0 items-center justify-center rounded-full text-sm/6 font-semibold ' . $palette['soft'] . ' ' . $palette['text'] . ' ' . $palette['ring']),
+        };
+    }
+
+    public function contentClass(): string
+    {
+        return match ($this->style) {
+            'minimal' => 'min-w-0 space-y-1.5 pt-0.5',
+            default => 'min-w-0 space-y-2',
+        };
+    }
+
+    public function titleClass(): string
+    {
+        $tokens = $this->ui->tokens($this->theme);
+
+        return match ($this->style) {
+            'minimal' => trim($tokens['heading_text'] . ' text-base font-medium tracking-[0.02em] text-balance sm:text-sm'),
+            default => trim($tokens['heading_text'] . ' text-xl font-semibold text-balance sm:text-lg'),
+        };
+    }
+
+    public function descriptionClass(): string
+    {
+        $tokens = $this->ui->tokens($this->theme);
+
+        return match ($this->style) {
+            'minimal' => trim('max-w-none text-sm/6 sm:text-[0.8125rem]/6 ' . $tokens['muted_text']),
+            default => $this->ui->body($this->theme) . ' max-w-none',
+        };
     }
 }

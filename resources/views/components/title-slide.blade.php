@@ -1,4 +1,4 @@
-<section {{ $attributes->class([$wrapperClass()]) }}>
+<div {{ $attributes->class([$wrapperClass()]) }}>
     @if($overline !== null)
         <p class="{{ $overlineClass() }}">{{ $overline }}</p>
     @endif
@@ -24,4 +24,4 @@
             @endif
         </div>
     @endif
-</section>
+</div>

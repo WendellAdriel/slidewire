@@ -1,13 +1,13 @@
-<article {{ $attributes->merge(['data-active' => $active ? 'true' : 'false', 'data-style' => $style])->class([$wrapperClass()]) }}>
+<div {{ $attributes->merge(['data-active' => $active ? 'true' : 'false', 'data-style' => $style])->class([$wrapperClass()]) }}>
     @if($index !== null)
         <span class="{{ $indexClass() }}">{{ $index }}</span>
     @endif
 
-    <div class="min-w-0 space-y-2">
-        <h3 class="{{ $ui->tokens($theme)['heading_text'] }} text-xl font-semibold text-balance sm:text-lg">{{ $title }}</h3>
+    <div class="{{ $contentClass() }}">
+        <h3 class="{{ $titleClass() }}">{{ $title }}</h3>
 
         @if($description !== null)
-            <p class="{{ $ui->body($theme) }} max-w-none">{{ $description }}</p>
+            <p class="{{ $descriptionClass() }}">{{ $description }}</p>
         @endif
     </div>
-</article>
+</div>

@@ -21,35 +21,24 @@ BLADE);
         ->toContain('data-columns="2"');
 });
 
-it('renders speaker slide with avatar and spotlight variant', function (): void {
+it('renders minimal steps differently from card steps', function (): void {
     $html = Blade::render(<<<'BLADE'
-<x-slidewire::speaker-slide
-    name="Wendell Adriel"
-    role="Creator"
-    company="SlideWire"
-    avatar="/speaker.webp"
-    align="center"
-    variant="spotlight"
->
-    Building delightful presentation workflows for Laravel teams.
-</x-slidewire::speaker-slide>
+<x-slidewire::steps-slide title="Workflow" columns="1" style="minimal">
+    <x-slidewire::step-item title="Draft" description="Shape the story" style="minimal" />
+</x-slidewire::steps-slide>
+
+<x-slidewire::steps-slide title="Workflow" columns="1" style="cards">
+    <x-slidewire::step-item title="Draft" description="Shape the story" style="cards" />
+</x-slidewire::steps-slide>
 BLADE);
 
     expect($html)
-        ->toContain('Wendell Adriel')
-        ->toContain('Creator - SlideWire')
-        ->toContain('/speaker.webp')
-        ->toContain('data-variant="spotlight"')
-        ->toContain('data-align="center"')
-        ->toContain('size-36')
-        ->toContain('Building delightful presentation workflows');
-});
-
-it('renders speaker slide cleanly without an avatar', function (): void {
-    $html = Blade::render('<x-slidewire::speaker-slide name="Guest">Closing keynote</x-slidewire::speaker-slide>');
-
-    expect($html)
-        ->toContain('Guest')
-        ->toContain('Closing keynote')
-        ->not->toContain('<img');
+        ->toContain('data-style="minimal"')
+        ->toContain('border-l')
+        ->toContain('size-7')
+        ->toContain('text-base font-medium')
+        ->toContain('text-sm/6 sm:text-[0.8125rem]/6')
+        ->toContain('data-style="cards"')
+        ->toContain('size-11')
+        ->toContain('text-xl font-semibold');
 });

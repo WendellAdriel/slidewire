@@ -1,4 +1,4 @@
-<section {{ $attributes->class([$wrapperClass()]) }}>
+<div {{ $attributes->class([$wrapperClass()]) }}>
     <div class="{{ $mediaClass() }}">
         @if($mediaWrapperClass() !== '')
             <div class="{{ $mediaWrapperClass() }}">{{ $media ?? '' }}</div>
@@ -8,4 +8,4 @@
     </div>
 
     <div class="{{ $contentClass() }}">{{ $content ?? '' }}</div>
-</section>
+</div>
