@@ -6,7 +6,7 @@ metadata:
 
 # SlideWire Development
 
-Use this skill when working with `wendelladriel/slidewire`: creating new presentations, improving existing decks, adding navigation-friendly structure, or styling slides with themes, text, images, markdown, code, diagrams, and fragments.
+Use this skill when working with `wendelladriel/slidewire`: creating new presentations, improving existing decks, adding navigation-friendly structure, or styling slides with themes, text, images, markdown, code, diagrams, fragments, and the first-party presentation UI components.
 
 ## Start with the SlideWire workflow
 
@@ -64,7 +64,15 @@ Strong defaults:
 - `<x-slidewire::slide>`: a single slide, with support for metadata like `theme`, `transition`, `transition-speed`, `auto-slide`, `auto-animate`, and background attributes.
 - `<x-slidewire::vertical-slide>`: groups slides into a vertical stack inside one horizontal column.
 - `<x-slidewire::fragment>`: reveals content progressively.
-- `<x-slidewire::text>`: semantic text wrapper with optional orientation and component-level animation hooks.
+- `<x-slidewire::panel>`: reusable modern surface for grouped content, supporting variants like `default`, `elevated`, `outlined`, and `glass`.
+- `<x-slidewire::title-slide>`: opinionated opening slide for titles, subtitles, overlines, and presenter metadata.
+- `<x-slidewire::two-column-slide>`: responsive split layout for explanation-plus-supporting-content slides.
+- `<x-slidewire::media-split-slide>`: narrative layout with media on one side and content on the other.
+- `<x-slidewire::timeline-slide>` and `<x-slidewire::timeline-item>`: structured milestone and roadmap layouts.
+- `<x-slidewire::steps-slide>` and `<x-slidewire::step-item>`: process and rollout layouts with optional auto-numbering.
+- `<x-slidewire::speaker-slide>`: polished speaker or featured profile layout.
+- `<x-slidewire::agenda-slide>` and `<x-slidewire::agenda-item>`: section overview and agenda layouts.
+- `<x-slidewire::text>`: semantic text wrapper with optional orientation, configured `font` overrides, and component-level animation hooks.
 - `<x-slidewire::image>`: native image wrapper with component-level animation hooks.
 - `<x-slidewire::markdown>`: renders markdown and highlighted code fences.
 - `<x-slidewire::code>`: renders highlighted code blocks directly.
@@ -72,12 +80,59 @@ Strong defaults:
 
 ### When to use each content component
 
+- Use `panel` when content needs a polished surface without rebuilding the same rounded, theme-aware wrapper.
+- Use `title-slide` for opening slides, chapter intros, and title cards.
+- Use `two-column-slide` for explanatory layouts that pair copy with supporting visuals or code.
+- Use `media-split-slide` when one side should feel more visual and the other more narrative.
+- Use `timeline-slide` and `agenda-slide` for milestones, sections, and chapter overviews that need more structure than bullets.
+- Use `steps-slide` for process, rollout, or tutorial content.
+- Use `speaker-slide` for intros, bios, and closing speaker spotlights.
 - Use `text` for semantic headings, paragraphs, inline text, vertical labels, or reusable animation-ready copy blocks.
 - Use `image` for native `<img>` output with SlideWire animation metadata.
 - Use `markdown` for narrative slides, bullets, and mixed prose/code.
 - Use `code` for tightly controlled code examples or language-specific snippets.
 - Use `diagram` for flows, architecture, and process explanations.
 - Use `fragment` for sequential reveals instead of overcrowding one slide.
+
+### Layout component guidance
+
+Use the first-party UI components when you want polished slide structure with theme-aware defaults and less repeated Tailwind markup.
+
+Recommendations:
+
+- Prefer `panel` as the base surface primitive for grouped text, code, media, or mixed content.
+- Prefer `title-slide` over ad hoc hero markup for opening slides or chapter separators.
+- Prefer `two-column-slide` when both sides are flexible content regions.
+- Prefer `media-split-slide` when one side should read as a framed visual area.
+- Prefer `timeline-slide`, `steps-slide`, and `agenda-slide` over plain lists when the sequence or hierarchy matters to the talk.
+- Prefer `speaker-slide` for speaker intros or featured profile moments instead of rebuilding profile layouts from scratch.
+- Still allow local customization through slots and `class` passthrough when a deck needs light visual tailoring.
+
+Example:
+
+```blade
+<x-slidewire::two-column-slide ratio="2:1" gap="xl" align="center">
+    <x-slot name="left">
+        <x-slidewire::panel
+            overline="Why SlideWire"
+            title="Presentation-ready layouts"
+            footer="Theme-aware by default"
+            variant="glass"
+        >
+            Build polished decks with reusable surfaces, structured agendas,
+            speaker slides, and narrative split layouts.
+        </x-slidewire::panel>
+    </x-slot>
+
+    <x-slot name="right">
+        <x-slidewire::steps-slide title="Workflow" columns="1" style="cards">
+            <x-slidewire::step-item title="Plan" description="Choose the right layout for the story." />
+            <x-slidewire::step-item title="Compose" description="Fill the slots with text, code, or media." />
+            <x-slidewire::step-item title="Present" description="Keep the deck cohesive across themes." />
+        </x-slidewire::steps-slide>
+    </x-slot>
+</x-slidewire::two-column-slide>
+```
 
 ### Text component guidance
 
@@ -86,6 +141,7 @@ Use `text` when you want semantic text output without hand-writing repeated anim
 Supported attributes:
 
 - `type`: `paragraph` (default), `inline`, `heading`
+- `font`: any configured family from `config('slidewire.fonts')`
 - `orientation`: `horizontal` (default), `vertical`
 - `animation`
 - `animation-speed`
@@ -102,6 +158,7 @@ Examples:
 ```blade
 <x-slidewire::text
     type="heading"
+    font="Inter"
     orientation="vertical"
     animation="slide-up"
     animation-speed="slow"
@@ -115,6 +172,7 @@ Recommendations:
 
 - Prefer `heading` for prominent slide titles when `h2` semantics make sense.
 - Prefer `inline` for short labels embedded in richer layouts.
+- Use `font` for one-off typography changes that should stay within configured presentation fonts.
 - Use `orientation="vertical"` for side labels or editorial layouts, not long paragraphs.
 - Fall back to raw HTML when you need fully custom markup.
 
@@ -262,6 +320,7 @@ Examples:
 ### Typography and font guidance
 
 - Theme typography comes from the active `ThemeConfig`.
+- `text` can override typography per instance with `font` when the family exists in `config('slidewire.fonts')`.
 - Code highlighting uses `slides.highlight.font` and `slides.highlight.font_size` by default.
 - Google Fonts configured in `config('slidewire.fonts')` are loaded automatically.
 - Override code sizing per component with Tailwind classes like `text-sm`, `text-base`, `text-lg`, or `text-xl`.
@@ -390,6 +449,7 @@ When creating or updating a SlideWire presentation, verify that:
 - deck defaults are used for shared behavior instead of repeated slide attributes
 - text contrast, spacing, and layout are clear on both dark and light backgrounds
 - fragments improve pacing instead of hiding essential context
+- first-party layout components are used where they reduce repeated structural markup
 - text and image components are used where their semantics or animation hooks improve authoring clarity
 - code, markdown, and diagram slides use the most appropriate component
 - route registration points to the correct presentation key
@@ -400,6 +460,7 @@ When creating or updating a SlideWire presentation, verify that:
 - Keep presentations in one Blade file per deck.
 - Use deck-level theme and transition defaults first.
 - Use Tailwind classes for slide composition and atmosphere.
+- Use first-party components like `panel`, `title-slide`, `two-column-slide`, `timeline-slide`, `steps-slide`, `speaker-slide`, and `agenda-slide` before rebuilding the same patterns by hand.
 - Use `text` and `image` when you want semantic wrappers with built-in animation metadata.
 - Use vertical slides for drill-downs, not for unrelated content.
 - Use fragments to pace the narrative.
