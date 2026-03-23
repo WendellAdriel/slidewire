@@ -8,14 +8,17 @@ use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 use WendellAdriel\SlideWire\Enums\SlideTransitionSpeed;
+use WendellAdriel\SlideWire\Support\ThemeResolver;
 
 class Text extends Component
 {
     public function __construct(
+        protected ThemeResolver $themeResolver,
         public string $type = 'paragraph',
         public string $orientation = 'horizontal',
         public ?string $animation = null,
         public string $animationSpeed = SlideTransitionSpeed::Default->value,
+        public ?string $font = null,
     ) {
         $this->type = $this->normalizeType($this->type);
         $this->orientation = $this->normalizeOrientation($this->orientation);
@@ -44,6 +47,15 @@ class Text extends Component
     public function normalizedAnimationSpeed(): string
     {
         return $this->animationSpeed;
+    }
+
+    public function fontFamilyStyle(): ?string
+    {
+        $fontFamily = $this->themeResolver->configuredFontFamily($this->font);
+
+        return $fontFamily === null
+            ? null
+            : "font-family: {$fontFamily};";
     }
 
     protected function normalizeType(string $type): string

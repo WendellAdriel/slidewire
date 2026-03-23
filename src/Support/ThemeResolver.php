@@ -43,6 +43,18 @@ class ThemeResolver
         return $this->resolveFontStack($font);
     }
 
+    public function configuredFontFamily(?string $font, string $fallback = 'ui-sans-serif, system-ui, sans-serif'): ?string
+    {
+        $font = trim((string) $font);
+        $fonts = config('slidewire.fonts', []);
+
+        if ($font === '' || ! array_key_exists($font, $fonts)) {
+            return null;
+        }
+
+        return "'{$font}', {$fallback}";
+    }
+
     public function googleFontsUrl(): ?string
     {
         $fontConfig = config('slidewire.fonts', []);

@@ -1,5 +1,10 @@
 @php
+    $componentStyle = collect([$attributes->get('style'), $fontFamilyStyle()])
+        ->filter()
+        ->implode(' ');
+
     $componentAttributes = $attributes
+        ->except('style')
         ->class([
             'slidewire-text',
             'slidewire-text-vertical' => $normalizedOrientation() === 'vertical',
@@ -10,6 +15,7 @@
             'data-orientation' => $normalizedOrientation(),
             'data-animation-speed' => $normalizedAnimationSpeed(),
         ])
+        ->when($componentStyle !== '', fn ($attributeBag) => $attributeBag->merge(['style' => $componentStyle]))
         ->when($animation !== null, fn ($attributeBag) => $attributeBag->merge(['data-animation' => $animation]));
 @endphp
 
