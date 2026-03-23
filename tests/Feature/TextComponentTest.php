@@ -69,6 +69,22 @@ it('falls back safely for invalid animation speed', function (): void {
     expect($html)->toContain('data-animation-speed="default"');
 });
 
+it('applies configured font overrides on text components', function (): void {
+    $html = Blade::render('<x-slidewire::text type="heading" font="Inter">Launch Day</x-slidewire::text>');
+
+    expect($html)
+        ->toContain('Launch Day')
+        ->toContain('font-family: &#039;Inter&#039;, ui-sans-serif, system-ui, sans-serif;');
+});
+
+it('ignores unknown font overrides on text components', function (): void {
+    $html = Blade::render('<x-slidewire::text font="UnknownFont">Fallback</x-slidewire::text>');
+
+    expect($html)
+        ->toContain('Fallback')
+        ->not->toContain('UnknownFont');
+});
+
 it('preserves nested inline html inside the slot', function (): void {
     $html = Blade::render(<<<'BLADE'
 <x-slidewire::text>

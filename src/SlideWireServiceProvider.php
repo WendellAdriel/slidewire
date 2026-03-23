@@ -16,6 +16,7 @@ use WendellAdriel\SlideWire\Support\PresentationCompiler;
 use WendellAdriel\SlideWire\Support\PresentationPathResolver;
 use WendellAdriel\SlideWire\Support\SlideContext;
 use WendellAdriel\SlideWire\Support\ThemeResolver;
+use WendellAdriel\SlideWire\Support\UiThemeResolver;
 
 class SlideWireServiceProvider extends ServiceProvider
 {
@@ -29,6 +30,7 @@ class SlideWireServiceProvider extends ServiceProvider
         $this->app->singleton(EffectiveSettingsResolver::class);
         $this->app->singleton(ThemeResolver::class);
         $this->app->singleton(SlideContext::class);
+        $this->app->singleton(UiThemeResolver::class);
     }
 
     public function boot(): void
