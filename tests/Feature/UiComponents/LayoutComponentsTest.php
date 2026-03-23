@@ -43,3 +43,22 @@ BLADE);
         ->toContain('lg:order-2')
         ->toContain('backdrop-blur-xl');
 });
+
+it('normalizes media split slide options to supported defaults', function (): void {
+    $html = Blade::render(<<<'BLADE'
+<x-slidewire::media-split-slide media-position="diagonal" ratio="9:9" media-style="card" gap="xxl">
+    <x-slot:media>
+        <img src="/demo.png" alt="Demo screen" />
+    </x-slot:media>
+    <x-slot:content>
+        <p>Supporting copy</p>
+    </x-slot:content>
+</x-slidewire::media-split-slide>
+BLADE);
+
+    expect($html)
+        ->toContain('lg:grid-cols-2')
+        ->toContain('gap-7')
+        ->not->toContain('lg:order-2')
+        ->not->toContain('backdrop-blur-xl');
+});
