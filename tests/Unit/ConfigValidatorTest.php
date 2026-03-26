@@ -92,3 +92,37 @@ it('rejects empty highlight font size', function (): void {
         highlight: new HighlightConfig(fontSize: '  '),
     ));
 })->throws(InvalidArgumentException::class, 'font_size must be a non-empty string');
+
+it('supports var export hydration for slidewire config dto objects', function (): void {
+    $slides = new SlidesConfig(
+        transition: SlideTransition::Fade,
+        transitionSpeed: SlideTransitionSpeed::Fast,
+        highlight: new HighlightConfig(
+            enabled: false,
+            theme: Theme::GithubDark,
+            font: 'FiraCode',
+            fontSize: 'text-sm',
+        ),
+    );
+
+    $theme = new ThemeConfig(
+        background: 'bg-slate-950 text-white',
+        highlightTheme: Theme::GithubDark,
+        title: new ThemeFont('Sora', 'text-white', 'text-5xl'),
+        text: new ThemeFont('Sora', 'text-slate-200', 'text-lg'),
+    );
+
+    $font = new FontConfig(FontSource::Google, [400, 600, 700]);
+
+    /** @var SlidesConfig $rehydratedSlides */
+    $rehydratedSlides = eval('return ' . var_export($slides, true) . ';');
+    /** @var ThemeConfig $rehydratedTheme */
+    $rehydratedTheme = eval('return ' . var_export($theme, true) . ';');
+    /** @var FontConfig $rehydratedFont */
+    $rehydratedFont = eval('return ' . var_export($font, true) . ';');
+
+    expect($rehydratedSlides)
+        ->toEqual($slides)
+        ->and($rehydratedTheme)->toEqual($theme)
+        ->and($rehydratedFont)->toEqual($font);
+});

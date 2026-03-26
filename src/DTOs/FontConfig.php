@@ -17,6 +17,14 @@ final readonly class FontConfig implements Stringable
         public array $weights = [],
     ) {}
 
+    /**
+     * @param  array{source: FontSource, weights: list<int>}  $properties
+     */
+    public static function __set_state(array $properties): self
+    {
+        return new self(...$properties);
+    }
+
     public function __toString(): string
     {
         return $this->source->value;
