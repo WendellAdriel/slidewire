@@ -23,4 +23,12 @@ final readonly class SlidesConfig
         public bool $autoSlidePauseOnInteraction = true,
         public HighlightConfig $highlight = new HighlightConfig(fontSize: 'text-base'),
     ) {}
+
+    /**
+     * @param  array{theme: string, showControls: bool, showProgress: bool, showFullscreenButton: bool, keyboard: bool, touch: bool, transition: SlideTransition, transitionDuration: int, transitionSpeed: SlideTransitionSpeed, autoSlide: int, autoSlidePauseOnInteraction: bool, highlight: HighlightConfig}  $properties
+     */
+    public static function __set_state(array $properties): self
+    {
+        return new self(...$properties);
+    }
 }
