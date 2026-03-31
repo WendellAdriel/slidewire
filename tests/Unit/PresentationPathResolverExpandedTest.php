@@ -25,6 +25,38 @@ it('returns null for non-existent presentations', function (): void {
     expect($resolver->presentationPath('non-existent-deck'))->toBeNull();
 });
 
+it('resolves markdown presentations when no blade file exists', function (): void {
+    $resolver = app(PresentationPathResolver::class);
+
+    expect($resolver->presentationPath('markdown/standalone'))
+        ->toBeString()
+        ->toEndWith('markdown/standalone.md');
+});
+
+it('prefers blade presentations over markdown files with the same name', function (): void {
+    $resolver = app(PresentationPathResolver::class);
+
+    expect($resolver->presentationPath('markdown/standalone-blade-precedence'))
+        ->toBeString()
+        ->toEndWith('markdown/standalone-blade-precedence.blade.php');
+});
+
+it('resolves nested markdown presentation paths', function (): void {
+    $resolver = app(PresentationPathResolver::class);
+
+    expect($resolver->presentationPath('markdown/nested/showcase'))
+        ->toBeString()
+        ->toEndWith('markdown/nested/showcase.md');
+});
+
+it('resolves presentation directories after checking file-based sources', function (): void {
+    $resolver = app(PresentationPathResolver::class);
+
+    expect($resolver->presentationPath('composed/product-launch'))
+        ->toBeString()
+        ->toEndWith('composed/product-launch');
+});
+
 it('resolves nested presentation paths', function (): void {
     $resolver = app(PresentationPathResolver::class);
     $path = $resolver->presentationPath('team/q1-kickoff');

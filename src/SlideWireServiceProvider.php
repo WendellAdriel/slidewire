@@ -12,9 +12,12 @@ use WendellAdriel\SlideWire\Commands\MakeSlideCommand;
 use WendellAdriel\SlideWire\Support\CodeBlockPrecompiler;
 use WendellAdriel\SlideWire\Support\CodeHighlighter;
 use WendellAdriel\SlideWire\Support\EffectiveSettingsResolver;
+use WendellAdriel\SlideWire\Support\MarkdownPresentationParser;
+use WendellAdriel\SlideWire\Support\MarkdownRenderer;
 use WendellAdriel\SlideWire\Support\PresentationCompiler;
 use WendellAdriel\SlideWire\Support\PresentationPathResolver;
 use WendellAdriel\SlideWire\Support\SlideContext;
+use WendellAdriel\SlideWire\Support\SlideIdGenerator;
 use WendellAdriel\SlideWire\Support\ThemeResolver;
 use WendellAdriel\SlideWire\Support\UiThemeResolver;
 
@@ -26,6 +29,9 @@ class SlideWireServiceProvider extends ServiceProvider
 
         $this->app->singleton(PresentationPathResolver::class);
         $this->app->singleton(CodeHighlighter::class);
+        $this->app->singleton(MarkdownRenderer::class);
+        $this->app->singleton(MarkdownPresentationParser::class);
+        $this->app->singleton(SlideIdGenerator::class);
         $this->app->singleton(PresentationCompiler::class);
         $this->app->singleton(EffectiveSettingsResolver::class);
         $this->app->singleton(ThemeResolver::class);

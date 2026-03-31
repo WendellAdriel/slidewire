@@ -1,0 +1,13 @@
+---
+theme: white
+---
+
+## Markdown Slide
+
+- Use Blade parts for layout-heavy slides.
+- Use Markdown parts for prose-heavy content.
+- Mix both in a composed deck.
+
+```php
+Route::slidewire('/slides/demo', '{{ presentation }}');
+```

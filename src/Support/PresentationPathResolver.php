@@ -14,10 +14,22 @@ class PresentationPathResolver
         $normalized = $this->normalizePresentationName($presentation);
 
         foreach ($this->roots() as $root) {
-            $candidate = "{$root}" . DIRECTORY_SEPARATOR . "{$normalized}.blade.php";
+            $bladeCandidate = "{$root}" . DIRECTORY_SEPARATOR . "{$normalized}.blade.php";
 
-            if (File::exists($candidate)) {
-                return $candidate;
+            if (File::exists($bladeCandidate)) {
+                return $bladeCandidate;
+            }
+
+            $markdownCandidate = "{$root}" . DIRECTORY_SEPARATOR . "{$normalized}.md";
+
+            if (File::exists($markdownCandidate)) {
+                return $markdownCandidate;
+            }
+
+            $directoryCandidate = "{$root}" . DIRECTORY_SEPARATOR . $normalized;
+
+            if (File::isDirectory($directoryCandidate)) {
+                return $directoryCandidate;
             }
         }
 
@@ -40,6 +52,10 @@ class PresentationPathResolver
             return null;
         }
 
+        if (File::isDirectory($path)) {
+            return $path;
+        }
+
         return dirname($path);
     }
 
@@ -48,6 +64,11 @@ class PresentationPathResolver
         $roots = $this->roots();
 
         return $roots[0] ?? resource_path('views/pages/slides');
+    }
+
+    public function roots(): array
+    {
+        return array_values(array_filter(config('slidewire.presentation_roots', []), is_string(...)));
     }
 
     protected function normalizePresentationName(string $presentation): string
@@ -66,10 +87,5 @@ class PresentationPathResolver
         }
 
         return $normalized;
-    }
-
-    protected function roots(): array
-    {
-        return array_values(array_filter(config('slidewire.presentation_roots', []), is_string(...)));
     }
 }

@@ -6,16 +6,14 @@ namespace WendellAdriel\SlideWire\View\Components;
 
 use Closure;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Str;
 use Illuminate\View\Component;
-use WendellAdriel\SlideWire\Support\CodeBlockPrecompiler;
-use WendellAdriel\SlideWire\Support\CodeHighlighter;
+use WendellAdriel\SlideWire\Support\MarkdownRenderer;
 use WendellAdriel\SlideWire\Support\SlideContext;
 
 class Markdown extends Component
 {
     public function __construct(
-        protected CodeHighlighter $highlighter,
+        protected MarkdownRenderer $renderer,
         protected SlideContext $context,
         public ?string $size = null,
     ) {}
@@ -27,16 +25,11 @@ class Markdown extends Component
 
     public function toHtml(string $markdown): string
     {
-        $markdown = CodeBlockPrecompiler::decode($markdown);
-
-        $withHighlightedCode = $this->highlighter->replaceCodeBlocks(
+        return $this->renderer->toHtml(
             $markdown,
-            $this->context->highlightTheme(),
             $this->context->presentationTheme(),
-            null,
+            $this->context->highlightTheme(),
             $this->size,
         );
-
-        return Str::markdown($withHighlightedCode);
     }
 }
