@@ -7,17 +7,23 @@ namespace WendellAdriel\SlideWire\Support;
 use Illuminate\Contracts\View\View as ViewContract;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use Livewire\Component as LivewireComponent;
 use Livewire\Drawer\BaseUtils as LivewireBaseUtils;
 use Livewire\Drawer\Utils as LivewireUtils;
 use ReflectionMethod;
 use RuntimeException;
+use SplFileInfo;
 use Throwable;
 use WendellAdriel\SlideWire\DTOs\Slide;
 
 class PresentationCompiler
 {
-    public function __construct(protected PresentationPathResolver $resolver) {}
+    public function __construct(
+        protected PresentationPathResolver $resolver,
+        protected MarkdownPresentationParser $markdownParser,
+        protected SlideIdGenerator $slideIdGenerator,
+    ) {}
 
     /**
      * @return array{deck_meta: array<string, string>, slides: array<int, array<int, Slide>>}
@@ -32,7 +38,19 @@ class PresentationCompiler
             return ['deck_meta' => [], 'slides' => []];
         }
 
-        return $this->compileFile($path);
+        return $this->compilePath($path);
+    }
+
+    /**
+     * @return array{deck_meta: array<string, string>, slides: array<int, array<int, Slide>>}
+     */
+    public function compilePath(string $path, bool $allowDeckWrapper = true): array
+    {
+        if (File::isDirectory($path)) {
+            return $this->compileDirectory($path);
+        }
+
+        return $this->compileFile($path, $allowDeckWrapper);
     }
 
     /**
@@ -57,7 +75,7 @@ class PresentationCompiler
      *
      * @throws RuntimeException when the file cannot be read or rendered
      */
-    protected function compileFile(string $path): array
+    protected function compileFile(string $path, bool $allowDeckWrapper = true): array
     {
         if (! File::exists($path)) {
             throw new RuntimeException("Presentation file not found: {$path}");
@@ -69,6 +87,10 @@ class PresentationCompiler
             throw new RuntimeException("Failed to read presentation file [{$path}]: {$e->getMessage()}", $e->getCode(), previous: $e);
         }
 
+        if (str_ends_with($path, '.md')) {
+            return $this->markdownParser->parse($path, $content);
+        }
+
         try {
             $html = $this->renderPresentation($path, $content);
         } catch (Throwable $e) {
@@ -78,6 +100,10 @@ class PresentationCompiler
         $deckMeta = $this->extractDeckMeta($html);
 
         $deckInner = $this->extractDeckInner($html);
+
+        if (! $allowDeckWrapper && $deckInner !== null) {
+            throw new RuntimeException("Composed presentation part [{$path}] cannot contain a deck wrapper.");
+        }
 
         if ($deckInner === null) {
             return ['deck_meta' => $deckMeta, 'slides' => $this->parseFlatSlides($html, $path)];
@@ -107,6 +133,44 @@ class PresentationCompiler
         }
 
         return $view->render();
+    }
+
+    /**
+     * @return array{deck_meta: array<string, string>, slides: array<int, array<int, Slide>>}
+     */
+    protected function compileDirectory(string $path): array
+    {
+        $deckMeta = [];
+        $deckPath = $path . DIRECTORY_SEPARATOR . 'deck.blade.php';
+
+        if (File::exists($deckPath)) {
+            $deckMeta = $this->compileFile($deckPath)['deck_meta'];
+        }
+
+        $partPaths = collect(File::files($path))
+            ->map(static fn (SplFileInfo $file): string => $file->getPathname())
+            ->filter(fn (string $filePath): bool => $this->isComposablePart($filePath))
+            ->sort()
+            ->values()
+            ->all();
+
+        if ($partPaths === []) {
+            return ['deck_meta' => $deckMeta, 'slides' => []];
+        }
+
+        $columns = [];
+        $hIndex = 0;
+
+        foreach ($partPaths as $partPath) {
+            $compiled = $this->compileFile($partPath, allowDeckWrapper: false);
+
+            foreach ($this->flattenSlides($compiled['slides']) as $slide) {
+                $columns[] = [$slide->withCoordinates($hIndex, 0)];
+                ++$hIndex;
+            }
+        }
+
+        return ['deck_meta' => $deckMeta, 'slides' => $columns];
     }
 
     protected function isLivewireSingleFileComponent(string $content): bool
@@ -242,7 +306,7 @@ class PresentationCompiler
         $innerHtml = trim($match[2] ?? '');
 
         return new Slide(
-            id: $this->slideId($path, $hIndex, $vIndex),
+            id: $this->slideIdGenerator->fromPath($path, $hIndex, $vIndex),
             html: $innerHtml,
             meta: $this->extractMetaFromAttributes($attributes),
             fragments: $this->fragmentCount($innerHtml),
@@ -350,17 +414,14 @@ class PresentationCompiler
         return '/<section\b([^>]*class=(?:"[^"]*slidewire-deck[^"]*"|\'[^\']*slidewire-deck[^\']*\')[^>]*)>/is';
     }
 
-    protected function slideId(string $path, int $hIndex, int $vIndex): string
+    protected function isComposablePart(string $path): bool
     {
-        $basename = pathinfo($path, PATHINFO_BASENAME);
-        $name = str_ends_with($basename, '.blade.php')
-            ? substr($basename, 0, -10)
-            : pathinfo($path, PATHINFO_FILENAME);
+        $filename = basename($path);
 
-        if ($vIndex > 0) {
-            return "{$name}-{$hIndex}-{$vIndex}";
+        if ($filename === 'deck.blade.php') {
+            return false;
         }
 
-        return "{$name}-{$hIndex}";
+        return Str::endsWith($filename, ['.blade.php', '.md']);
     }
 }

@@ -1,0 +1,27 @@
+---
+theme: black
+transition: fade
+---
+
+# {{ title }}
+
+Presentation key: `{{ presentation }}`
+
+- Use the arrow keys, click, or swipe to navigate.
+- Add deck-level metadata with frontmatter.
+
+<!-- slide -->
+
+---
+theme: white
+---
+
+## Markdown Support
+
+- Write a full deck in Markdown.
+- Split slides with `<!-- slide -->`.
+- Add code fences for syntax highlighting.
+
+```php
+Route::slidewire('/slides/demo', '{{ presentation }}');
+```

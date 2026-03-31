@@ -1,0 +1,11 @@
+<x-slidewire::slide class="bg-slate-900 text-white">
+    <div class="mx-auto max-w-5xl space-y-6">
+        <h1 class="text-4xl font-bold tracking-tight">{{ title }}</h1>
+        <p class="text-lg text-slate-200">
+            Presentation key: <strong>{{ presentation }}</strong>
+        </p>
+        <x-slidewire::fragment>
+            <p class="text-base text-slate-300">This deck is split into multiple files for easier composition.</p>
+        </x-slidewire::fragment>
+    </div>
+</x-slidewire::slide>
