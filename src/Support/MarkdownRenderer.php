@@ -23,6 +23,9 @@ class MarkdownRenderer
             $size,
         );
 
-        return Str::markdown($withHighlightedCode);
+        return sprintf(
+            '<div class="slidewire-markdown">%s</div>',
+            Str::markdown($withHighlightedCode),
+        );
     }
 }
