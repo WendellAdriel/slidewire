@@ -69,7 +69,7 @@ new class() extends Component
         <div class="mx-auto flex min-h-full w-full max-w-5xl items-center">
             <x-slidewire::panel title="Meet the speaker" overline="Built from primitives" variant="elevated" tone="primary" class="w-full">
                 <div class="flex items-center gap-5">
-                    <img src="https://assets.example.test/avatars/1.webp" alt="Wendell Adriel" class="size-24 rounded-full object-cover outline-1 -outline-offset-1 outline-white/10" />
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' rx='48' fill='%230e7490'/%3E%3Ctext x='48' y='58' text-anchor='middle' font-size='32' font-family='Arial' fill='white'%3EWA%3C/text%3E%3C/svg%3E" alt="Wendell Adriel" class="size-24 rounded-full object-cover outline-1 -outline-offset-1 outline-white/10" />
                     <div class="space-y-2">
                         <h3 class="text-3xl font-semibold text-white">Wendell Adriel</h3>
                         <p class="text-sm/6 text-cyan-100/70">Maintainer - SlideWire</p>

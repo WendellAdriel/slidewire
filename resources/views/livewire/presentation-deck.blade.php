@@ -218,6 +218,8 @@
                 leavingIndex: null,
                 isTransitioning: false,
                 transitionTimeout: null,
+                transitionToken: 0,
+                frameTransitionAnimations: new Map(),
                 autoSlideTimeout: null,
                 reducedMotionQuery: null,
                 init() {
@@ -709,6 +711,36 @@
                             });
                     });
                 },
+                resetFrameTransitionState(slide) {
+                    if (!slide) {
+                        return;
+                    }
+
+                    slide.style.opacity = '';
+                    slide.style.transform = '';
+                },
+                clearFrameTransition(slide) {
+                    if (!slide) {
+                        return;
+                    }
+
+                    const animation = this.frameTransitionAnimations.get(slide);
+
+                    if (animation) {
+                        animation.cancel();
+                        this.frameTransitionAnimations.delete(slide);
+                    }
+
+                    this.resetFrameTransitionState(slide);
+                },
+                startFrameTransition(slide, keyframes, options) {
+                    this.clearFrameTransition(slide);
+
+                    const animation = slide.animate(keyframes, options);
+                    this.frameTransitionAnimations.set(slide, animation);
+
+                    return animation;
+                },
                 playTransition(oldIndex, newIndex) {
                     if (oldIndex === undefined || oldIndex === null || oldIndex === newIndex) {
                         return;
@@ -722,6 +754,18 @@
 
                         return;
                     }
+
+                    const token = ++this.transitionToken;
+                    const previousLeavingSlide = this.leavingIndex !== null ? this.$refs[`slide${this.leavingIndex}`] : null;
+
+                    if (this.transitionTimeout) {
+                        window.clearTimeout(this.transitionTimeout);
+                        this.transitionTimeout = null;
+                    }
+
+                    this.clearFrameTransition(previousLeavingSlide);
+                    this.clearFrameTransition(fromSlide);
+                    this.clearFrameTransition(toSlide);
 
                     // Let auto-animate handle the transition to avoid overlap flicker.
                     if (this.shouldAutoAnimate(fromSlide, toSlide)) {
@@ -743,24 +787,43 @@
                     this.leavingIndex = oldIndex;
                     this.isTransitioning = true;
 
-                    if (this.transitionTimeout) {
-                        window.clearTimeout(this.transitionTimeout);
-                    }
+                    const completeTransition = () => {
+                        if (this.transitionToken !== token) {
+                            return;
+                        }
+
+                        if (this.transitionTimeout) {
+                            window.clearTimeout(this.transitionTimeout);
+                            this.transitionTimeout = null;
+                        }
+
+                        this.leavingIndex = null;
+                        this.isTransitioning = false;
+
+                        this.$nextTick(() => {
+                            this.clearFrameTransition(fromSlide);
+                            this.clearFrameTransition(toSlide);
+                        });
+                    };
 
                     if (transition === 'none') {
-                        this.transitionTimeout = window.setTimeout(() => {
-                            this.leavingIndex = null;
-                            this.isTransitioning = false;
-                        }, 20);
+                        this.transitionTimeout = window.setTimeout(completeTransition, 20);
 
                         return;
                     }
 
-                    const run = (el, keyframes) => el.animate(keyframes, {
-                        duration,
-                        easing,
-                        fill: 'both',
-                    });
+                    const animations = [];
+                    const run = (el, keyframes) => {
+                        const animation = this.startFrameTransition(el, keyframes, {
+                            duration,
+                            easing,
+                            fill: 'both',
+                        });
+
+                        animations.push(animation);
+
+                        return animation;
+                    };
 
                     if (transition === 'fade') {
                         run(fromSlide, [{ opacity: 1 }, { opacity: 0 }]);
@@ -797,10 +860,10 @@
                         }
                     }
 
-                    this.transitionTimeout = window.setTimeout(() => {
-                        this.leavingIndex = null;
-                        this.isTransitioning = false;
-                    }, duration + 25);
+                    Promise.allSettled(animations.map((animation) => animation.finished))
+                        .then(completeTransition);
+
+                    this.transitionTimeout = window.setTimeout(completeTransition, duration + 25);
                 },
                 toggleFullscreen() {
                     if (document.fullscreenElement) {
