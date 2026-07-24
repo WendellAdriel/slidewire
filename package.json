@@ -8,6 +8,6 @@
     "browser:install": "playwright install chromium"
   },
   "dependencies": {
-    "puppeteer": "^24.37.5"
+    "puppeteer": "^25.3.0"
   }
 }
