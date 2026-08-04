@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Phiki\Theme\Theme;
 use WendellAdriel\SlideWire\DTOs\FontConfig;
 use WendellAdriel\SlideWire\DTOs\HighlightConfig;
+use WendellAdriel\SlideWire\DTOs\RemoteConfig;
 use WendellAdriel\SlideWire\DTOs\SlidesConfig;
 use WendellAdriel\SlideWire\DTOs\ThemeConfig;
 use WendellAdriel\SlideWire\DTOs\ThemeFont;
@@ -126,3 +127,24 @@ it('supports var export hydration for slidewire config dto objects', function ()
         ->and($rehydratedTheme)->toEqual($theme)
         ->and($rehydratedFont)->toEqual($font);
 });
+
+it('accepts valid remote configuration', function (): void {
+    $validator = new ConfigValidator();
+    $validator->validateRemote(new RemoteConfig());
+})->throwsNoExceptions();
+
+it('rejects an invalid remote ttl', function (): void {
+    $validator = new ConfigValidator();
+    $validator->validateRemote(new RemoteConfig(ttl: '2 hours'));
+})->throws(InvalidArgumentException::class, 'remote ttl');
+
+it('rejects an invalid remote poll interval', function (): void {
+    $validator = new ConfigValidator();
+    $validator->validateRemote(new RemoteConfig(pollInterval: 'fast'));
+})->throws(InvalidArgumentException::class, 'poll_interval');
+
+it('rejects a non-dto remote config', function (): void {
+    config()->set('slidewire.remote', ['ttl' => '2h']);
+    $validator = new ConfigValidator();
+    $validator->validate();
+})->throws(InvalidArgumentException::class, 'must be a RemoteConfig');

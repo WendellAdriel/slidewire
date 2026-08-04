@@ -1,5 +1,8 @@
 <div
     x-ref="deckRoot"
+    @if($remoteMode === 'viewer' && $remoteSessionKey)
+        wire:poll.{{ $pollInterval }}="pollRemoteState"
+    @endif
     x-data="slidewireDeck(
         $wire,
         @entangle('activeIndex').live,
@@ -13,7 +16,9 @@
         @js((bool) ($deckMeta['auto_slide_pause_on_interaction'] ?? $slidesConfig->autoSlidePauseOnInteraction)),
         @js($gridShape),
         @js($deckPayload['coords']),
-        @js($themeTypography)
+        @js($themeTypography),
+        @js($remoteMode),
+        @js($viewerControls)
     )"
     x-bind:class="currentThemeClass()"
     x-on:keydown.window.right="onArrowKey($event, 'right')"
@@ -119,6 +124,32 @@
                 @endif
             </nav>
         @endif
+
+        @if($remoteMode === 'controller')
+            <div class="slidewire-remote-controls" x-show="remoteMode === 'controller'" x-on:click.stop>
+                <span class="slidewire-remote-badge">LIVE</span>
+                <button
+                    type="button"
+                    wire:click="toggleViewerControls"
+                    class="slidewire-remote-toggle"
+                    x-bind:aria-label="viewerControls ? 'Lock viewers to the presenter' : 'Let viewers navigate freely'"
+                    x-bind:title="viewerControls ? 'Lock viewers to the presenter' : 'Let viewers navigate freely'"
+                >
+                    <svg x-show="viewerControls" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M13.5 10.5V6.75a4.5 4.5 0 1 1 9 0v3.75M3.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H3.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
+                    <svg x-show="!viewerControls" x-cloak viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
+                </button>
+                <button
+                    type="button"
+                    wire:click="endRemoteSession"
+                    wire:confirm="End the remote session? Viewers will stop following and this can't be undone."
+                    class="slidewire-remote-end"
+                    aria-label="End remote session"
+                    title="End remote session"
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M6 18 18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        @endif
     </div>
 
     <style>
@@ -190,11 +221,20 @@
             .slidewire-content .slidewire-diagram[data-processed] { transition: none; }
             .slidewire-typewriter::after { animation: none; opacity: 0; }
         }
+
+        .slidewire-remote-controls { position: absolute; top: .9rem; right: .9rem; display: flex; align-items: center; gap: .4rem; padding: .35rem .6rem; border-radius: 999px; backdrop-filter: blur(8px); background: rgb(2 6 23 / 45%); z-index: 30; }
+        .slidewire-remote-badge { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #f87171; padding: .15rem .4rem; background: rgb(248 113 113 / 15%); border-radius: 999px; animation: slidewire-pulse 2s ease-in-out infinite; }
+        .slidewire-remote-toggle, .slidewire-remote-end { border: 1px solid rgb(148 163 184 / 50%); border-radius: 999px; padding: .35rem; background: rgb(15 23 42 / 95%); color: #f8fafc; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: opacity .15s ease; }
+        .slidewire-remote-toggle:hover, .slidewire-remote-end:hover { opacity: .8; }
+        .slidewire-remote-toggle svg, .slidewire-remote-end svg { display: block; }
+        .slidewire-remote-end { color: #f87171; }
+
+        @@keyframes slidewire-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
     </style>
 
     @script
         <script>
-            window.slidewireDeck = function ($wire, index, fragment, count, slideThemes, configuredThemes, defaultTheme, slideTransitionDurations, slideAutoSlides, pauseOnInteraction, gridShape, slideCoords, themeTypography) {
+            window.slidewireDeck = function ($wire, index, fragment, count, slideThemes, configuredThemes, defaultTheme, slideTransitionDurations, slideAutoSlides, pauseOnInteraction, gridShape, slideCoords, themeTypography, remoteMode, viewerControls) {
             return {
                 $wire,
                 index,
@@ -209,6 +249,8 @@
                 gridShape,
                 slideCoords,
                 themeTypography: themeTypography || {},
+                remoteMode,
+                viewerControls,
                 touchStartX: null,
                 touchStartY: null,
                 touchScrollState: null,
@@ -304,6 +346,17 @@
                         this.refreshFragments();
                         this.setupAutoSlide();
                     });
+
+                    this.$wire.$watch('viewerControls', (value) => {
+                        this.viewerControls = value;
+                    });
+
+                    this.$wire.$watch('remoteMode', (value) => {
+                        this.remoteMode = value;
+                    });
+                },
+                canUserNavigate() {
+                    return !(this.remoteMode === 'viewer' && !this.viewerControls);
                 },
                 currentCoords() {
                     return this.slideCoords[this.index] || { h: 0, v: 0 };
@@ -347,6 +400,10 @@
                     return v < maxV;
                 },
                 navigateRight() {
+                    if (!this.canUserNavigate()) {
+                        return;
+                    }
+
                     this.interruptAutoSlide();
                     const { h } = this.currentCoords();
 
@@ -362,6 +419,10 @@
                     }
                 },
                 navigateLeft() {
+                    if (!this.canUserNavigate()) {
+                        return;
+                    }
+
                     this.interruptAutoSlide();
                     const { h } = this.currentCoords();
 
@@ -377,10 +438,18 @@
                     }
                 },
                 navigateDown() {
+                    if (!this.canUserNavigate()) {
+                        return;
+                    }
+
                     this.interruptAutoSlide();
                     this.$wire.navigateDown();
                 },
                 navigateUp() {
+                    if (!this.canUserNavigate()) {
+                        return;
+                    }
+
                     this.interruptAutoSlide();
                     this.$wire.navigateUp();
                 },
@@ -474,6 +543,10 @@
                     return fMatch ? Number(fMatch[1]) : -1;
                 },
                 syncFromHash() {
+                    if (!this.canUserNavigate()) {
+                        return;
+                    }
+
                     const fragment = this.parseFragmentFromHash();
                     const match2d = window.location.hash.match(/#\/slide\/(\d+)\/(\d+)/);
 
@@ -503,11 +576,19 @@
                     }
                 },
                 next() {
+                    if (!this.canUserNavigate()) {
+                        return;
+                    }
+
                     this.interruptAutoSlide();
                     this.captureAutoAnimateSnapshot(this.index + 1);
                     this.$wire.nextSlide();
                 },
                 previous() {
+                    if (!this.canUserNavigate()) {
+                        return;
+                    }
+
                     this.interruptAutoSlide();
                     this.captureAutoAnimateSnapshot(this.index - 1);
                     this.$wire.previousSlide();

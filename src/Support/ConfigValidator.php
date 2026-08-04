@@ -7,6 +7,7 @@ namespace WendellAdriel\SlideWire\Support;
 use InvalidArgumentException;
 use Phiki\Theme\Theme;
 use WendellAdriel\SlideWire\DTOs\FontConfig;
+use WendellAdriel\SlideWire\DTOs\RemoteConfig;
 use WendellAdriel\SlideWire\DTOs\SlidesConfig;
 use WendellAdriel\SlideWire\DTOs\ThemeConfig;
 use WendellAdriel\SlideWire\DTOs\ThemeFont;
@@ -99,12 +100,36 @@ class ConfigValidator
         }
     }
 
+    /** @throws InvalidArgumentException when a remote config value is invalid */
+    public function validateRemote(RemoteConfig $remote): void
+    {
+        if (preg_match(RemoteConfig::TTL_PATTERN, $remote->ttl) !== 1) {
+            throw new InvalidArgumentException(
+                "SlideWire remote ttl [{$remote->ttl}] is invalid. Use formats like '30m', '2h', or '1d'."
+            );
+        }
+
+        if (preg_match(RemoteConfig::POLL_PATTERN, $remote->pollInterval) !== 1) {
+            throw new InvalidArgumentException(
+                "SlideWire remote poll_interval [{$remote->pollInterval}] is invalid. Use formats like '750ms' or '1s'."
+            );
+        }
+    }
+
     /** @throws InvalidArgumentException on invalid configuration */
     public function validate(): void
     {
         $this->validateThemes(config('slidewire.themes', []));
         $this->validateFonts(config('slidewire.fonts', []));
         $this->validateSlides(config('slidewire.slides', new SlidesConfig()));
+
+        $remote = config('slidewire.remote', new RemoteConfig());
+
+        if (! ($remote instanceof RemoteConfig)) {
+            throw new InvalidArgumentException('SlideWire remote config must be a RemoteConfig instance.');
+        }
+
+        $this->validateRemote($remote);
     }
 
     protected function validateThemeTypography(string $themeName, ThemeFont $font, string $key): void
