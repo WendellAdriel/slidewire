@@ -353,6 +353,12 @@
 
                     this.$wire.$watch('remoteMode', (value) => {
                         this.remoteMode = value;
+
+                        if (value === 'solo') {
+                            this.$el.getAttributeNames()
+                                .filter(name => name.startsWith('wire:poll'))
+                                .forEach(name => this.$el.removeAttribute(name));
+                        }
                     });
                 },
                 canUserNavigate() {

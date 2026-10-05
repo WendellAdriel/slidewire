@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\URL;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
+use WendellAdriel\SlideWire\DTOs\RemoteState;
 use WendellAdriel\SlideWire\DTOs\Slide;
 use WendellAdriel\SlideWire\DTOs\SlidesConfig;
 use WendellAdriel\SlideWire\Support\EffectiveSettingsResolver;
@@ -94,6 +95,13 @@ class PresentationDeck extends Component
 
         $this->activeFragment = -1;
         $this->activeIndex = min($this->activeIndex + 1, count($this->slides) - 1);
+    }
+
+    public function updating(string $property): void
+    {
+        if (in_array($property, ['activeIndex', 'activeFragment'], true)) {
+            abort_if($this->viewerNavigationLocked(), 403);
+        }
     }
 
     public function previousSlide(): void
@@ -258,6 +266,8 @@ class PresentationDeck extends Component
             $this->remoteMode = 'solo';
             $this->remoteSessionKey = null;
 
+            $this->skipRender();
+
             return;
         }
 
@@ -266,11 +276,12 @@ class PresentationDeck extends Component
         if (
             $this->lastControllerIndex !== $state->index
             || $this->lastControllerFragment !== $state->fragment
+            || (! $state->viewerControls && (
+                $this->activeIndex !== $this->normalizeIndex($state->index)
+                || $this->activeFragment !== $state->fragment
+            ))
         ) {
-            $this->activeIndex = $this->normalizeIndex($state->index);
-            $this->activeFragment = $state->fragment;
-            $this->lastControllerIndex = $state->index;
-            $this->lastControllerFragment = $state->fragment;
+            $this->applyRemotePosition($state);
 
             return;
         }
@@ -352,6 +363,32 @@ class PresentationDeck extends Component
 
     private function viewerNavigationLocked(): bool
     {
-        return $this->remoteMode === 'viewer' && ! $this->viewerControls;
+        if ($this->remoteMode !== 'viewer' || $this->remoteSessionKey === null) {
+            return false;
+        }
+
+        $state = app(RemoteSessionManager::class)->get($this->remoteSessionKey);
+
+        if ($state === null) {
+            return false;
+        }
+
+        $this->viewerControls = $state->viewerControls;
+
+        if ($state->viewerControls) {
+            return false;
+        }
+
+        $this->applyRemotePosition($state);
+
+        return true;
+    }
+
+    private function applyRemotePosition(RemoteState $state): void
+    {
+        $this->activeIndex = $this->normalizeIndex($state->index);
+        $this->activeFragment = $state->fragment;
+        $this->lastControllerIndex = $state->index;
+        $this->lastControllerFragment = $state->fragment;
     }
 }

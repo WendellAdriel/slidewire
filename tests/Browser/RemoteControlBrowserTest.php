@@ -67,6 +67,35 @@ it('syncs a viewer DOM to controller navigation across two browser contexts', fu
     $viewer->assertNoJavaScriptErrors();
 })->group('browser');
 
+it('preserves revealed viewer fragments and stops polling when a session ends or expires', function (string $ending): void {
+    $manager = app(RemoteSessionManager::class);
+    $session = $manager->create('remote-fragments', '1h');
+    $paths = remotePaths($session['key'], 'remote-fragments');
+    $controller = visit($paths['controller']);
+    $viewer = visit($paths['viewer']);
+    $controller->waitForText('Fragment Deck')->assertNoJavaScriptErrors();
+    $viewer->waitForText('Fragment Deck')->assertNoJavaScriptErrors();
+
+    $controller->script("document.querySelector('.slidewire-control-right').click()");
+    $viewer->wait(1.8);
+
+    $viewer->assertScript("document.querySelectorAll('.slidewire-frame.is-active .slidewire-fragment-visible').length", 1);
+
+    if ($ending === 'deleted') {
+        $manager->delete($session['key']);
+    } else {
+        $cacheKey = "slidewire:remote:{$session['key']}";
+        $state = Cache::store('file')->get($cacheKey);
+        $state['expires_at'] = now()->subSecond()->timestamp;
+        Cache::store('file')->put($cacheKey, $state, 60);
+    }
+
+    $viewer->wait(1.8)
+        ->assertScript("document.querySelectorAll('.slidewire-frame.is-active .slidewire-fragment-visible').length", 1)
+        ->assertScript("document.querySelector('[x-ref=deckRoot]').getAttributeNames().some(name => name.startsWith('wire:poll'))", false)
+        ->assertNoJavaScriptErrors();
+})->with(['deleted', 'expired'])->group('browser');
+
 it('keeps a passive viewer from self-navigating', function (): void {
     $manager = app(RemoteSessionManager::class);
     $session = $manager->create('remote', '1h');
@@ -81,6 +110,28 @@ it('keeps a passive viewer from self-navigating', function (): void {
     // Attempt to self-navigate; the passive guard must ignore it.
     $viewer->script("document.querySelector('.slidewire-control-right')?.click()");
     $viewer->wait(0.6);
+
+    expect(slidewireActiveHeading($viewer))->toBe('Remote Slide One');
+    $viewer->assertNoJavaScriptErrors();
+})->group('browser');
+
+it('returns a free browsing viewer to the presenter when the lock is restored', function (): void {
+    $session = app(RemoteSessionManager::class)->create('remote', '1h');
+    $paths = remotePaths($session['key']);
+    $controller = visit($paths['controller']);
+    $viewer = visit($paths['viewer']);
+    $controller->waitForText('Remote Slide One')->assertNoJavaScriptErrors();
+    $viewer->waitForText('Remote Slide One')->assertNoJavaScriptErrors();
+
+    $controller->script("document.querySelector('.slidewire-remote-toggle').click()");
+    $viewer->wait(1.8);
+    $viewer->script("document.querySelector('.slidewire-control-right').click()");
+    $viewer->wait(0.6);
+    expect(slidewireActiveHeading($viewer))->toBe('Remote Slide Two');
+    expect(slidewireActiveHeading($controller))->toBe('Remote Slide One');
+
+    $controller->script("document.querySelector('.slidewire-remote-toggle').click()");
+    $viewer->wait(1.8);
 
     expect(slidewireActiveHeading($viewer))->toBe('Remote Slide One');
     $viewer->assertNoJavaScriptErrors();

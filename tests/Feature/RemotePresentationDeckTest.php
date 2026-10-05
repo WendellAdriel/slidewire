@@ -245,6 +245,63 @@ it('allows server-side navigation for a free-browse viewer', function (): void {
         ->assertSet('activeIndex', 2);
 });
 
+it('rejects direct position updates from a passive viewer', function (string $property, int $value): void {
+    $session = app(RemoteSessionManager::class)->create('demo', '1h');
+
+    Livewire::withQueryParams(['remote' => $session['key']])
+        ->test(PresentationDeck::class, ['presentation' => 'demo'])
+        ->set($property, $value)
+        ->assertForbidden();
+})->with([
+    ['activeIndex', 2],
+    ['activeFragment', 0],
+]);
+
+it('returns a newly locked viewer to the presenter without a position delta', function (): void {
+    $manager = app(RemoteSessionManager::class);
+    $session = $manager->create('demo', '1h');
+    $manager->update($session['key'], 0, 0, true);
+
+    $viewer = Livewire::withQueryParams(['remote' => $session['key']])
+        ->test(PresentationDeck::class, ['presentation' => 'demo'])
+        ->call('goToSlide', 2);
+
+    $manager->update($session['key'], 0, 0, false);
+
+    $viewer->call('pollRemoteState')
+        ->assertSet('viewerControls', false)
+        ->assertSet('activeIndex', 0)
+        ->assertSet('activeFragment', 0);
+});
+
+it('checks current viewer permissions before navigation rather than waiting for a poll', function (): void {
+    $manager = app(RemoteSessionManager::class);
+    $session = $manager->create('demo', '1h');
+    $manager->update($session['key'], 0, -1, true);
+
+    $viewer = Livewire::withQueryParams(['remote' => $session['key']])
+        ->test(PresentationDeck::class, ['presentation' => 'demo']);
+
+    $manager->update($session['key'], 0, -1, false);
+
+    $viewer->call('goToSlide', 2)
+        ->assertSet('viewerControls', false)
+        ->assertSet('activeIndex', 0);
+});
+
+it('rejects direct position updates after re-locking before the next poll', function (): void {
+    $manager = app(RemoteSessionManager::class);
+    $session = $manager->create('demo', '1h');
+    $manager->update($session['key'], 0, -1, true);
+
+    $viewer = Livewire::withQueryParams(['remote' => $session['key']])
+        ->test(PresentationDeck::class, ['presentation' => 'demo']);
+
+    $manager->update($session['key'], 0, -1, false);
+
+    $viewer->set('activeIndex', 2)->assertForbidden();
+});
+
 it('renders no remote markup in solo mode', function (): void {
     // Needles target mode-specific markup (wire: directives), not the CSS class
     // names, which always appear in the <style> block regardless of mode.
