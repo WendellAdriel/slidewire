@@ -93,19 +93,19 @@
         @endforeach
 
         @if($showControls)
-            <nav class="slidewire-controls" aria-label="Slide controls">
-                <button type="button" x-on:click.stop="previous()" aria-label="Previous slide" class="slidewire-control-arrow slidewire-control-left" :disabled="!canGoLeft()">
+            <nav class="slidewire-controls" aria-label="Slide controls" x-show="canUserNavigate() || @js($showFullscreenButton)" x-cloak>
+                <button type="button" x-show="canUserNavigate()" x-cloak x-on:click.stop="previous()" aria-label="Previous slide" class="slidewire-control-arrow slidewire-control-left" :disabled="!canGoLeft()">
                     <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
                 </button>
                 @if($hasVerticalSlides)
-                    <button type="button" x-on:click.stop="navigateUp()" aria-label="Slide up" class="slidewire-control-arrow slidewire-control-up" :disabled="!canGoUp()">
+                    <button type="button" x-show="canUserNavigate()" x-cloak x-on:click.stop="navigateUp()" aria-label="Slide up" class="slidewire-control-arrow slidewire-control-up" :disabled="!canGoUp()">
                         <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
                     </button>
-                    <button type="button" x-on:click.stop="navigateDown()" aria-label="Slide down" class="slidewire-control-arrow slidewire-control-down" :disabled="!canGoDown()">
+                    <button type="button" x-show="canUserNavigate()" x-cloak x-on:click.stop="navigateDown()" aria-label="Slide down" class="slidewire-control-arrow slidewire-control-down" :disabled="!canGoDown()">
                         <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
                     </button>
                 @endif
-                <button type="button" x-on:click.stop="next()" aria-label="Next slide" class="slidewire-control-arrow slidewire-control-right" :disabled="!canGoRight()">
+                <button type="button" x-show="canUserNavigate()" x-cloak x-on:click.stop="next()" aria-label="Next slide" class="slidewire-control-arrow slidewire-control-right" :disabled="!canGoRight()">
                     <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
                 </button>
                 @if($showFullscreenButton)
