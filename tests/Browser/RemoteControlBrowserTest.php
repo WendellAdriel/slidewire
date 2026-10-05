@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
 use WendellAdriel\SlideWire\DTOs\RemoteConfig;
+use WendellAdriel\SlideWire\DTOs\SlidesConfig;
 use WendellAdriel\SlideWire\Support\RemoteSessionManager;
 
 function slidewireActiveHeading($page): string
@@ -40,6 +41,7 @@ beforeEach(function (): void {
 
     Route::slidewire('/slides/remote', 'remote');
     Route::slidewire('/slides/remote-fragments', 'remote-fragments');
+    Route::slidewire('/slides/vertical', 'vertical');
     Route::getRoutes()->refreshNameLookups();
 });
 
@@ -52,6 +54,7 @@ it('syncs a viewer DOM to controller navigation across two browser contexts', fu
 
     $controller->waitForText('Remote Slide One')->assertNoJavaScriptErrors();
     $viewer->waitForText('Remote Slide One')->assertNoJavaScriptErrors();
+    $controller->assertVisible('.slidewire-control-right');
 
     expect(slidewireActiveHeading($viewer))->toBe('Remote Slide One');
 
@@ -80,6 +83,7 @@ it('preserves revealed viewer fragments and stops polling when a session ends or
     $viewer->wait(1.8);
 
     $viewer->assertScript("document.querySelectorAll('.slidewire-frame.is-active .slidewire-fragment-visible').length", 1);
+    $viewer->assertScript("Array.from(document.querySelectorAll('.slidewire-control-arrow')).every(button => button.getClientRects().length === 0)", true);
 
     if ($ending === 'deleted') {
         $manager->delete($session['key']);
@@ -93,6 +97,8 @@ it('preserves revealed viewer fragments and stops polling when a session ends or
     $viewer->wait(1.8)
         ->assertScript("document.querySelectorAll('.slidewire-frame.is-active .slidewire-fragment-visible').length", 1)
         ->assertScript("document.querySelector('[x-ref=deckRoot]').getAttributeNames().some(name => name.startsWith('wire:poll'))", false)
+        ->assertScript("Array.from(document.querySelectorAll('.slidewire-control-arrow')).every(button => button.getClientRects().length > 0)", true)
+        ->assertVisible('[aria-label="Enter fullscreen"]')
         ->assertNoJavaScriptErrors();
 })->with(['deleted', 'expired'])->group('browser');
 
@@ -122,9 +128,11 @@ it('returns a free browsing viewer to the presenter when the lock is restored', 
     $viewer = visit($paths['viewer']);
     $controller->waitForText('Remote Slide One')->assertNoJavaScriptErrors();
     $viewer->waitForText('Remote Slide One')->assertNoJavaScriptErrors();
+    $viewer->assertScript("Array.from(document.querySelectorAll('.slidewire-control-arrow')).every(button => button.getClientRects().length === 0)", true);
 
     $controller->script("document.querySelector('.slidewire-remote-toggle').click()");
     $viewer->wait(1.8);
+    $viewer->assertScript("Array.from(document.querySelectorAll('.slidewire-control-arrow')).every(button => button.getClientRects().length > 0)", true);
     $viewer->script("document.querySelector('.slidewire-control-right').click()");
     $viewer->wait(0.6);
     expect(slidewireActiveHeading($viewer))->toBe('Remote Slide Two');
@@ -134,7 +142,31 @@ it('returns a free browsing viewer to the presenter when the lock is restored', 
     $viewer->wait(1.8);
 
     expect(slidewireActiveHeading($viewer))->toBe('Remote Slide One');
+    $viewer->assertScript("Array.from(document.querySelectorAll('.slidewire-control-arrow')).every(button => button.getClientRects().length === 0)", true);
+    $viewer->assertVisible('[aria-label="Enter fullscreen"]');
     $viewer->assertNoJavaScriptErrors();
+})->group('browser');
+
+it('hides every navigation arrow for a locked viewer but keeps fullscreen available', function (string $presentation, int $arrows): void {
+    $session = app(RemoteSessionManager::class)->create($presentation, '1h');
+    $viewer = visit(remotePaths($session['key'], $presentation)['viewer']);
+
+    $viewer->assertScript("document.querySelectorAll('.slidewire-control-arrow').length", $arrows)
+        ->assertScript("Array.from(document.querySelectorAll('.slidewire-control-arrow')).every(button => button.getClientRects().length === 0)", true)
+        ->assertVisible('[aria-label="Enter fullscreen"]')
+        ->assertNoJavaScriptErrors();
+})->with([
+    ['remote', 2],
+    ['vertical', 4],
+])->group('browser');
+
+it('hides an empty control cluster when a locked viewer has fullscreen disabled', function (): void {
+    config()->set('slidewire.slides', new SlidesConfig(showFullscreenButton: false));
+    $session = app(RemoteSessionManager::class)->create('remote', '1h');
+    $viewer = visit(remotePaths($session['key'])['viewer']);
+
+    $viewer->assertScript("document.querySelector('.slidewire-controls').getClientRects().length", 0)
+        ->assertNoJavaScriptErrors();
 })->group('browser');
 
 it('keeps revealed fragments visible when the controller toggles the lock', function (): void {
