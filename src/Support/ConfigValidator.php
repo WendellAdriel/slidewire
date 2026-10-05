@@ -103,7 +103,7 @@ class ConfigValidator
     /** @throws InvalidArgumentException when a remote config value is invalid */
     public function validateRemote(RemoteConfig $remote): void
     {
-        $manager = new RemoteSessionManager();
+        $manager = new RemoteSessionManager;
 
         try {
             $manager->parseTtl($remote->ttl);
@@ -123,9 +123,9 @@ class ConfigValidator
     {
         $this->validateThemes(config('slidewire.themes', []));
         $this->validateFonts(config('slidewire.fonts', []));
-        $this->validateSlides(config('slidewire.slides', new SlidesConfig()));
+        $this->validateSlides(config('slidewire.slides', new SlidesConfig));
 
-        $remote = config('slidewire.remote', new RemoteConfig());
+        $remote = config('slidewire.remote', new RemoteConfig);
 
         if (! ($remote instanceof RemoteConfig)) {
             throw new InvalidArgumentException('SlideWire remote config must be a RemoteConfig instance.');

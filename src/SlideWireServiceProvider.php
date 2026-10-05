@@ -45,7 +45,7 @@ class SlideWireServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'slidewire');
 
         Blade::componentNamespace('WendellAdriel\\SlideWire\\View\\Components', 'slidewire');
-        Blade::prepareStringsForCompilationUsing(new CodeBlockPrecompiler());
+        Blade::prepareStringsForCompilationUsing(new CodeBlockPrecompiler);
 
         if (! Route::hasMacro('slidewire')) {
             Route::macro('slidewire', fn (string $uri, string $presentation): \Illuminate\Routing\Route => Route::livewire($uri, 'slidewire::presentation-deck')

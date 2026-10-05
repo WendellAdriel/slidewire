@@ -32,6 +32,6 @@ final readonly class RemoteConfig
     {
         $config = config('slidewire.remote');
 
-        return $config instanceof self ? $config : new self();
+        return $config instanceof self ? $config : new self;
     }
 }

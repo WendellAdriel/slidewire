@@ -186,7 +186,7 @@ class PresentationDeck extends Component
         $settingsResolver = app(EffectiveSettingsResolver::class);
         $themeResolver = app(ThemeResolver::class);
         $viewDataFactory = app(SlideViewDataFactory::class);
-        $slidesConfig = config('slidewire.slides', new SlidesConfig());
+        $slidesConfig = config('slidewire.slides', new SlidesConfig);
 
         $effectiveSlides = $settingsResolver->resolve($this->slides, $this->deckMeta);
         $configuredThemes = $themeResolver->backgroundClassMap();

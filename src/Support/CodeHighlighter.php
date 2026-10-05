@@ -17,7 +17,7 @@ class CodeHighlighter
 
     public function highlight(string $code, string $language, Theme|string|null $highlightTheme = null, ?string $presentationTheme = null, ?string $font = null, ?string $size = null): HtmlString
     {
-        $slides = config('slidewire.slides', new SlidesConfig());
+        $slides = config('slidewire.slides', new SlidesConfig);
 
         if (! $slides->highlight->enabled) {
             return $this->fallback($code, $language, $font, $size);
@@ -51,7 +51,7 @@ class CodeHighlighter
             }
         }
 
-        return config('slidewire.slides', new SlidesConfig())->highlight->theme;
+        return config('slidewire.slides', new SlidesConfig)->highlight->theme;
     }
 
     // Replace fenced markdown code blocks with highlighted HTML.
@@ -72,7 +72,7 @@ class CodeHighlighter
         }
 
         try {
-            $phiki = new Phiki();
+            $phiki = new Phiki;
             $result = $phiki->codeToHtml($code, $language, $theme)->toString();
 
             if (! is_string($result)) {
@@ -121,7 +121,7 @@ class CodeHighlighter
 
     protected function styleAttribute(?string $font = null): string
     {
-        $highlight = config('slidewire.slides', new SlidesConfig())->highlight;
+        $highlight = config('slidewire.slides', new SlidesConfig)->highlight;
         $font = trim((string) ($font ?? $highlight->font));
 
         if ($font !== '') {
@@ -135,7 +135,7 @@ class CodeHighlighter
 
     protected function classAttribute(?string $size = null): string
     {
-        $highlight = config('slidewire.slides', new SlidesConfig())->highlight;
+        $highlight = config('slidewire.slides', new SlidesConfig)->highlight;
         $size = trim((string) ($size ?? $highlight->fontSize));
 
         return $size === '' ? '' : ' ' . e($size);

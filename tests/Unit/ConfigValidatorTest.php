@@ -15,17 +15,17 @@ use WendellAdriel\SlideWire\Enums\SlideTransitionSpeed;
 use WendellAdriel\SlideWire\Support\ConfigValidator;
 
 it('validates the default config without errors', function (): void {
-    $validator = new ConfigValidator();
+    $validator = new ConfigValidator;
     $validator->validate();
 })->throwsNoExceptions();
 
 it('rejects non-dto theme entries', function (): void {
-    $validator = new ConfigValidator();
+    $validator = new ConfigValidator;
     $validator->validateThemes(['broken' => 'just-a-string']);
 })->throws(InvalidArgumentException::class, 'must be a ThemeConfig');
 
 it('rejects themes with empty background', function (): void {
-    $validator = new ConfigValidator();
+    $validator = new ConfigValidator;
     $validator->validateThemes([
         'broken' => new ThemeConfig(
             background: '',
@@ -37,7 +37,7 @@ it('rejects themes with empty background', function (): void {
 })->throws(InvalidArgumentException::class, 'missing required key [background]');
 
 it('rejects themes with empty title typography values', function (): void {
-    $validator = new ConfigValidator();
+    $validator = new ConfigValidator;
     $validator->validateThemes([
         'broken' => new ThemeConfig(
             background: 'bg-red',
@@ -49,7 +49,7 @@ it('rejects themes with empty title typography values', function (): void {
 })->throws(InvalidArgumentException::class, 'missing required key [font]');
 
 it('rejects themes with empty typography size', function (): void {
-    $validator = new ConfigValidator();
+    $validator = new ConfigValidator;
     $validator->validateThemes([
         'broken' => new ThemeConfig(
             background: 'bg-red',
@@ -61,12 +61,12 @@ it('rejects themes with empty typography size', function (): void {
 })->throws(InvalidArgumentException::class, 'missing required key [size]');
 
 it('rejects non-dto font entries', function (): void {
-    $validator = new ConfigValidator();
+    $validator = new ConfigValidator;
     $validator->validateFonts(['BadFont' => 'google']);
 })->throws(InvalidArgumentException::class, 'must be a FontConfig');
 
 it('accepts valid font configurations', function (): void {
-    $validator = new ConfigValidator();
+    $validator = new ConfigValidator;
     $validator->validateFonts([
         'Inter' => new FontConfig(FontSource::Google, [400, 700]),
         'Georgia' => new FontConfig(FontSource::System),
@@ -74,7 +74,7 @@ it('accepts valid font configurations', function (): void {
 })->throwsNoExceptions();
 
 it('accepts valid slide settings', function (): void {
-    $validator = new ConfigValidator();
+    $validator = new ConfigValidator;
     $validator->validateSlides(new SlidesConfig(
         transition: SlideTransition::Fade,
         transitionSpeed: SlideTransitionSpeed::Fast,
@@ -83,12 +83,12 @@ it('accepts valid slide settings', function (): void {
 })->throwsNoExceptions();
 
 it('validates font weights must be integers', function (): void {
-    $validator = new ConfigValidator();
+    $validator = new ConfigValidator;
     $validator->validateFonts(['Inter' => new FontConfig(FontSource::Google, ['400'])]);
 })->throws(InvalidArgumentException::class, 'weights must be an array of integers');
 
 it('rejects empty highlight font size', function (): void {
-    $validator = new ConfigValidator();
+    $validator = new ConfigValidator;
     $validator->validateSlides(new SlidesConfig(
         highlight: new HighlightConfig(fontSize: '  '),
     ));
@@ -129,22 +129,22 @@ it('supports var export hydration for slidewire config dto objects', function ()
 });
 
 it('accepts valid remote configuration', function (): void {
-    $validator = new ConfigValidator();
-    $validator->validateRemote(new RemoteConfig());
+    $validator = new ConfigValidator;
+    $validator->validateRemote(new RemoteConfig);
 })->throwsNoExceptions();
 
 it('rejects an invalid remote ttl', function (): void {
-    $validator = new ConfigValidator();
+    $validator = new ConfigValidator;
     $validator->validateRemote(new RemoteConfig(ttl: '2 hours'));
 })->throws(InvalidArgumentException::class, 'remote ttl');
 
 it('rejects an invalid remote poll interval', function (): void {
-    $validator = new ConfigValidator();
+    $validator = new ConfigValidator;
     $validator->validateRemote(new RemoteConfig(pollInterval: 'fast'));
 })->throws(InvalidArgumentException::class, 'poll_interval');
 
 it('rejects a non-dto remote config', function (): void {
     config()->set('slidewire.remote', ['ttl' => '2h']);
-    $validator = new ConfigValidator();
+    $validator = new ConfigValidator;
     $validator->validate();
 })->throws(InvalidArgumentException::class, 'must be a RemoteConfig');

@@ -11,7 +11,7 @@ use WendellAdriel\SlideWire\Support\ConfigValidator;
 use WendellAdriel\SlideWire\Support\RemoteSessionManager;
 
 beforeEach(function (): void {
-    $this->manager = new RemoteSessionManager();
+    $this->manager = new RemoteSessionManager;
 });
 
 it('parses TTL DSL correctly', function (string $input, int $expected): void {
@@ -174,7 +174,7 @@ it('does not extend the session expiry when updating', function (): void {
 });
 
 it('prevents deletion from interleaving with a state update', function (): void {
-    $store = new RemoteInterleavingCacheStore();
+    $store = new RemoteInterleavingCacheStore;
     Cache::extend('interleaving', fn () => Cache::repository($store));
     config()->set('cache.stores.interleaving', ['driver' => 'interleaving']);
     config()->set('slidewire.remote', new RemoteConfig(cacheStore: 'interleaving'));
@@ -214,7 +214,7 @@ it('waits for the session write lock before deleting state', function (): void {
 });
 
 it('does not rewrite state when its TTL elapses after reading it', function (): void {
-    $store = new RemoteInterleavingCacheStore();
+    $store = new RemoteInterleavingCacheStore;
     Cache::extend('elapsed', fn () => Cache::repository($store));
     config()->set('cache.stores.elapsed', ['driver' => 'elapsed']);
     config()->set('slidewire.remote', new RemoteConfig(cacheStore: 'elapsed'));

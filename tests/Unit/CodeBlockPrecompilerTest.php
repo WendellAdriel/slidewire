@@ -5,7 +5,7 @@ declare(strict_types=1);
 use WendellAdriel\SlideWire\Support\CodeBlockPrecompiler;
 
 it('encodes fenced code blocks inside markdown component tags', function (): void {
-    $precompiler = new CodeBlockPrecompiler();
+    $precompiler = new CodeBlockPrecompiler;
 
     $template = '<x-slidewire::markdown>
 ```php
@@ -30,7 +30,7 @@ it('decodes encoded code blocks back to original fenced format', function (): vo
 });
 
 it('round-trips encode and decode correctly', function (): void {
-    $precompiler = new CodeBlockPrecompiler();
+    $precompiler = new CodeBlockPrecompiler;
 
     $template = '<x-slidewire::markdown>
 ## Title
@@ -52,7 +52,7 @@ Some text after.
 });
 
 it('preserves content outside of markdown component tags', function (): void {
-    $precompiler = new CodeBlockPrecompiler();
+    $precompiler = new CodeBlockPrecompiler;
 
     $template = '<div>
 ```php
@@ -73,7 +73,7 @@ echo "inside";
 });
 
 it('handles multiple code blocks inside a single markdown tag', function (): void {
-    $precompiler = new CodeBlockPrecompiler();
+    $precompiler = new CodeBlockPrecompiler;
 
     $template = '<x-slidewire::markdown>
 ```php
@@ -97,7 +97,7 @@ ls -la
 });
 
 it('handles multiple markdown component tags in a template', function (): void {
-    $precompiler = new CodeBlockPrecompiler();
+    $precompiler = new CodeBlockPrecompiler;
 
     $template = '<x-slidewire::markdown>
 ```php
@@ -124,7 +124,7 @@ echo "two";
 });
 
 it('protects Blade component syntax inside code blocks from compilation', function (): void {
-    $precompiler = new CodeBlockPrecompiler();
+    $precompiler = new CodeBlockPrecompiler;
 
     $template = '<x-slidewire::markdown>
 ```blade
@@ -146,7 +146,7 @@ it('protects Blade component syntax inside code blocks from compilation', functi
 });
 
 it('leaves markdown content without code blocks unchanged', function (): void {
-    $precompiler = new CodeBlockPrecompiler();
+    $precompiler = new CodeBlockPrecompiler;
 
     $template = '<x-slidewire::markdown>
 ## Just a heading
@@ -161,7 +161,7 @@ Some **bold** text and `inline code`.
 });
 
 it('handles empty markdown component tags', function (): void {
-    $precompiler = new CodeBlockPrecompiler();
+    $precompiler = new CodeBlockPrecompiler;
 
     $template = '<x-slidewire::markdown></x-slidewire::markdown>';
     $result = $precompiler($template);
@@ -170,7 +170,7 @@ it('handles empty markdown component tags', function (): void {
 });
 
 it('handles code blocks with no language specifier', function (): void {
-    $precompiler = new CodeBlockPrecompiler();
+    $precompiler = new CodeBlockPrecompiler;
 
     $template = '<x-slidewire::markdown>
 ```
@@ -187,7 +187,7 @@ plain text code
 });
 
 it('encodes slot content inside code component tags', function (): void {
-    $precompiler = new CodeBlockPrecompiler();
+    $precompiler = new CodeBlockPrecompiler;
 
     $template = '<x-slidewire::code language="php">
 echo "hello";
@@ -201,7 +201,7 @@ echo "hello";
 });
 
 it('round-trips code component slot encode and decode correctly', function (): void {
-    $precompiler = new CodeBlockPrecompiler();
+    $precompiler = new CodeBlockPrecompiler;
 
     $template = '<x-slidewire::code language="php">
 $deck = new Compiler();
@@ -216,7 +216,7 @@ $slides = $deck->compile("demo");
 });
 
 it('protects Blade component syntax inside code component from compilation', function (): void {
-    $precompiler = new CodeBlockPrecompiler();
+    $precompiler = new CodeBlockPrecompiler;
 
     $template = '<x-slidewire::code language="blade">
 <x-slidewire::deck theme="black">
@@ -236,7 +236,7 @@ it('protects Blade component syntax inside code component from compilation', fun
 });
 
 it('handles code component with attributes alongside markdown protection', function (): void {
-    $precompiler = new CodeBlockPrecompiler();
+    $precompiler = new CodeBlockPrecompiler;
 
     $template = '<x-slidewire::markdown>
 ```php
@@ -259,7 +259,7 @@ echo "in code";
 });
 
 it('handles empty code component tags', function (): void {
-    $precompiler = new CodeBlockPrecompiler();
+    $precompiler = new CodeBlockPrecompiler;
 
     $template = '<x-slidewire::code language="php"></x-slidewire::code>';
     $result = $precompiler($template);

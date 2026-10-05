@@ -32,7 +32,7 @@ class Slide extends Component
         public ?string $autoSlide = null,
         public ?string $theme = null,
     ) {
-        $this->transition ??= config('slidewire.slides', new SlidesConfig())->transition->value;
+        $this->transition ??= config('slidewire.slides', new SlidesConfig)->transition->value;
         $this->context->setSlide($this->theme);
     }
 

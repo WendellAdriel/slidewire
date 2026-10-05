@@ -37,7 +37,7 @@ class EffectiveSettingsResolver
      */
     public function resolve(array $slides, array $deckMeta): array
     {
-        $slidesConfig = config('slidewire.slides', new SlidesConfig());
+        $slidesConfig = config('slidewire.slides', new SlidesConfig);
 
         return array_values(array_map(
             fn (Slide $slide): Slide => $this->resolveSlide($slide, $deckMeta, $slidesConfig),

@@ -5,7 +5,7 @@ declare(strict_types=1);
 use WendellAdriel\SlideWire\DTOs\RemoteConfig;
 
 it('exposes remote defaults', function (): void {
-    $config = new RemoteConfig();
+    $config = new RemoteConfig;
 
     expect($config->ttl)->toBe('2h')
         ->and($config->pollInterval)->toBe('2s')
@@ -34,5 +34,5 @@ it('resolves the configured remote config', function (): void {
 it('resolves to defaults when the remote config is absent', function (): void {
     config(['slidewire.remote' => null]);
 
-    expect(RemoteConfig::resolved())->toEqual(new RemoteConfig());
+    expect(RemoteConfig::resolved())->toEqual(new RemoteConfig);
 });
