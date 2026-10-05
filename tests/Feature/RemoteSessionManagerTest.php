@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Illuminate\Cache\ArrayStore;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
 use WendellAdriel\SlideWire\DTOs\RemoteConfig;
 use WendellAdriel\SlideWire\DTOs\RemoteState;
@@ -130,3 +132,97 @@ it('uses the configured cache store when set', function (): void {
 
     expect(Cache::store('array')->has("slidewire:remote:{$result['key']}"))->toBeTrue();
 });
+
+it('ignores cached state past its absolute expiry', function (): void {
+    $session = $this->manager->create('pitch', '1m');
+    $cacheKey = "slidewire:remote:{$session['key']}";
+    $state = Cache::get($cacheKey);
+    $state['expires_at'] = now()->subSecond()->timestamp;
+    Cache::put($cacheKey, $state, 60);
+
+    $this->manager->update($session['key'], 1, 0, true);
+
+    expect($this->manager->get($session['key']))->toBeNull()
+        ->and($this->manager->exists($session['key']))->toBeFalse();
+});
+
+it('does not extend the session expiry when updating', function (): void {
+    $this->freezeSecond();
+    $session = $this->manager->create('pitch', '1m');
+    $this->travel(59)->seconds();
+    $this->manager->update($session['key'], 1, 0, true);
+    $this->travel(1)->seconds();
+
+    expect($this->manager->get($session['key']))->toBeNull()
+        ->and($this->manager->exists($session['key']))->toBeFalse();
+});
+
+it('prevents deletion from interleaving with a state update', function (): void {
+    $store = new RemoteInterleavingCacheStore();
+    Cache::extend('interleaving', fn () => Cache::repository($store));
+    config()->set('cache.stores.interleaving', ['driver' => 'interleaving']);
+    config()->set('slidewire.remote', new RemoteConfig(cacheStore: 'interleaving'));
+    $session = $this->manager->create('pitch', '1m');
+    $deletionRan = false;
+    $store->afterRead = function () use ($store, $session, &$deletionRan): void {
+        $store->lock("slidewire:remote:{$session['key']}:lock", 10)->get(function () use ($session, &$deletionRan): void {
+            $deletionRan = true;
+            $this->manager->delete($session['key']);
+        });
+    };
+
+    $this->manager->update($session['key'], 1, 0, false);
+
+    expect($deletionRan)->toBeFalse();
+
+    $this->manager->delete($session['key']);
+    $this->manager->update($session['key'], 2, 0, false);
+
+    expect($this->manager->exists($session['key']))->toBeFalse();
+});
+
+it('waits for the session write lock before deleting state', function (): void {
+    $session = $this->manager->create('pitch', '1m');
+    $lock = Cache::store()->lock("slidewire:remote:{$session['key']}:lock", 10);
+    $lock->get();
+
+    try {
+        expect(fn () => $this->manager->delete($session['key']))->toThrow(LockTimeoutException::class);
+        expect($this->manager->exists($session['key']))->toBeTrue();
+    } finally {
+        $lock->release();
+    }
+
+    $this->manager->delete($session['key']);
+    expect($this->manager->exists($session['key']))->toBeFalse();
+});
+
+it('does not rewrite state when its TTL elapses after reading it', function (): void {
+    $store = new RemoteInterleavingCacheStore();
+    Cache::extend('elapsed', fn () => Cache::repository($store));
+    config()->set('cache.stores.elapsed', ['driver' => 'elapsed']);
+    config()->set('slidewire.remote', new RemoteConfig(cacheStore: 'elapsed'));
+    $session = $this->manager->create('pitch', '1m');
+    $store->afterRead = function (): void {
+        $this->travel(61)->seconds();
+    };
+
+    $this->manager->update($session['key'], 1, 0, false);
+
+    expect($this->manager->exists($session['key']))->toBeFalse();
+});
+
+class RemoteInterleavingCacheStore extends ArrayStore
+{
+    public ?Closure $afterRead = null;
+
+    public function get($key): mixed
+    {
+        $state = parent::get($key);
+        $callback = $this->afterRead;
+        $this->afterRead = null;
+        $callback?->__invoke();
+
+        return $state;
+    }
+}

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WendellAdriel\SlideWire\Support;
 
+use Illuminate\Contracts\Cache\Lock;
+use Illuminate\Contracts\Cache\LockProvider;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -79,38 +81,51 @@ class RemoteSessionManager
     {
         $store = $this->store();
         $cacheKey = $this->cacheKey($key);
-        $state = $store->get($cacheKey);
+        $this->lock($key)->block(3, function () use ($store, $cacheKey, $index, $fragment, $viewerControls): void {
+            $state = $store->get($cacheKey);
 
-        if ($state === null) {
-            return;
-        }
+            if ($state === null || $state['expires_at'] <= now()->timestamp) {
+                return;
+            }
 
-        $remainingTtl = max(1, $state['expires_at'] - now()->timestamp);
-
-        $store->put($cacheKey, [
-            ...$state,
-            'index' => $index,
-            'fragment' => $fragment,
-            'viewer_controls' => $viewerControls,
-            'updated_at' => now()->timestamp,
-        ], $remainingTtl);
+            $store->put($cacheKey, [
+                ...$state,
+                'index' => $index,
+                'fragment' => $fragment,
+                'viewer_controls' => $viewerControls,
+                'updated_at' => now()->timestamp,
+            ], now()->setTimestamp($state['expires_at']));
+        });
     }
 
     public function get(string $key): ?RemoteState
     {
         $state = $this->store()->get($this->cacheKey($key));
 
-        return $state === null ? null : RemoteState::fromArray($state);
+        return $state === null || $state['expires_at'] <= now()->timestamp
+            ? null
+            : RemoteState::fromArray($state);
     }
 
     public function delete(string $key): void
     {
-        $this->store()->forget($this->cacheKey($key));
+        $this->lock($key)->block(3, fn () => $this->store()->forget($this->cacheKey($key)));
     }
 
     public function exists(string $key): bool
     {
-        return $this->store()->has($this->cacheKey($key));
+        return $this->get($key) instanceof RemoteState;
+    }
+
+    private function lock(string $key): Lock
+    {
+        $store = $this->store()->getStore();
+
+        if (! $store instanceof LockProvider) {
+            throw new InvalidArgumentException('SlideWire remote cache store must support atomic locks.');
+        }
+
+        return $store->lock($this->cacheKey($key) . ':lock', 10);
     }
 
     private function config(): RemoteConfig
