@@ -24,17 +24,13 @@ class RemoteSessionManager
             throw new InvalidArgumentException("Invalid TTL format: [{$ttl}]. Use formats like '30m', '2h', or '1d'.");
         }
 
-        $value = (int) $matches[1];
-
-        if ($value < 1) {
-            throw new InvalidArgumentException("Invalid TTL: [{$ttl}]. The value must be at least 1.");
-        }
-
-        return match ($matches[2]) {
-            'm' => $value * 60,
-            'h' => $value * 3600,
-            'd' => $value * 86400,
+        $multiplier = match ($matches[2]) {
+            'm' => 60,
+            'h' => 3600,
+            'd' => 86400,
         };
+
+        return $this->durationValue($matches[1], intdiv(PHP_INT_MAX - now()->timestamp, $multiplier), 'TTL') * $multiplier;
     }
 
     /**
@@ -42,9 +38,13 @@ class RemoteSessionManager
      */
     public function validatePollInterval(string $pollInterval): string
     {
-        if (preg_match(RemoteConfig::POLL_PATTERN, $pollInterval) !== 1) {
+        if (preg_match(RemoteConfig::POLL_PATTERN, $pollInterval, $matches) !== 1) {
             throw new InvalidArgumentException("Invalid poll interval [{$pollInterval}]. Use formats like '500ms' or '2s'.");
         }
+
+        // Browser timers accept at most a signed 32-bit millisecond interval.
+        $maximum = $matches[2] === 's' ? intdiv(2_147_483_647, 1000) : 2_147_483_647;
+        $this->durationValue($matches[1], $maximum, 'poll interval');
 
         return $pollInterval;
     }
@@ -115,6 +115,19 @@ class RemoteSessionManager
     public function exists(string $key): bool
     {
         return $this->get($key) instanceof RemoteState;
+    }
+
+    private function durationValue(string $value, int $maximum, string $label): int
+    {
+        $parsed = filter_var(ltrim($value, '0'), FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1, 'max_range' => $maximum],
+        ]);
+
+        if ($parsed === false) {
+            throw new InvalidArgumentException("Invalid {$label}: [{$value}]. The value must be between 1 and {$maximum}.");
+        }
+
+        return $parsed;
     }
 
     private function lock(string $key): Lock

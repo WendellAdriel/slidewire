@@ -103,16 +103,18 @@ class ConfigValidator
     /** @throws InvalidArgumentException when a remote config value is invalid */
     public function validateRemote(RemoteConfig $remote): void
     {
-        if (preg_match(RemoteConfig::TTL_PATTERN, $remote->ttl) !== 1) {
-            throw new InvalidArgumentException(
-                "SlideWire remote ttl [{$remote->ttl}] is invalid. Use formats like '30m', '2h', or '1d'."
-            );
+        $manager = new RemoteSessionManager();
+
+        try {
+            $manager->parseTtl($remote->ttl);
+        } catch (InvalidArgumentException $exception) {
+            throw new InvalidArgumentException('SlideWire remote ttl is invalid. ' . $exception->getMessage(), $exception->getCode(), previous: $exception);
         }
 
-        if (preg_match(RemoteConfig::POLL_PATTERN, $remote->pollInterval) !== 1) {
-            throw new InvalidArgumentException(
-                "SlideWire remote poll_interval [{$remote->pollInterval}] is invalid. Use formats like '750ms' or '1s'."
-            );
+        try {
+            $manager->validatePollInterval($remote->pollInterval);
+        } catch (InvalidArgumentException $exception) {
+            throw new InvalidArgumentException('SlideWire remote poll_interval is invalid. ' . $exception->getMessage(), $exception->getCode(), previous: $exception);
         }
     }
 

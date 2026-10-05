@@ -63,3 +63,13 @@ it('uses the default TTL from config when not specified', function (): void {
         ->expectsOutputToContain('TTL: 60 minutes')
         ->assertExitCode(0);
 });
+
+it('reports invalid zero or overflowing duration overrides without crashing', function (string $option, string $value): void {
+    $this->artisan('slidewire:remote', ['presentation' => 'pitch', $option => $value])
+        ->assertExitCode(1);
+})->with([
+    ['--ttl', '0m'],
+    ['--poll', '0ms'],
+    ['--ttl', PHP_INT_MAX . 'd'],
+    ['--poll', str_repeat('9', 100) . 's'],
+]);

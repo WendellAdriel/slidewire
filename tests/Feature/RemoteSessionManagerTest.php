@@ -7,6 +7,7 @@ use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
 use WendellAdriel\SlideWire\DTOs\RemoteConfig;
 use WendellAdriel\SlideWire\DTOs\RemoteState;
+use WendellAdriel\SlideWire\Support\ConfigValidator;
 use WendellAdriel\SlideWire\Support\RemoteSessionManager;
 
 beforeEach(function (): void {
@@ -132,6 +133,21 @@ it('uses the configured cache store when set', function (): void {
 
     expect(Cache::store('array')->has("slidewire:remote:{$result['key']}"))->toBeTrue();
 });
+
+it('rejects invalid durations consistently in config and session creation', function (string $ttl, string $poll): void {
+    expect(fn () => new ConfigValidator()->validateRemote(new RemoteConfig(ttl: $ttl, pollInterval: $poll)))
+        ->toThrow(InvalidArgumentException::class)
+        ->and(fn () => $this->manager->create('pitch', $ttl, $poll))
+        ->toThrow(InvalidArgumentException::class);
+})->with([
+    ['0m', '2s'],
+    ['2h', '0ms'],
+    ['2h', '0s'],
+    [PHP_INT_MAX . 'd', '2s'],
+    [str_repeat('9', 100) . 'h', '2s'],
+    ['2h', str_repeat('9', 100) . 's'],
+    ['2h', '2147483648ms'],
+]);
 
 it('ignores cached state past its absolute expiry', function (): void {
     $session = $this->manager->create('pitch', '1m');

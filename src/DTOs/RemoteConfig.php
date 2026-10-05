@@ -8,7 +8,7 @@ final readonly class RemoteConfig
 {
     public const string TTL_PATTERN = '/^(\d+)(m|h|d)$/';
 
-    public const string POLL_PATTERN = '/^\d+(ms|s)$/';
+    public const string POLL_PATTERN = '/^(\d+)(ms|s)$/';
 
     public function __construct(
         public string $ttl = '2h',
