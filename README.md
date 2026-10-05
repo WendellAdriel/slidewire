@@ -38,6 +38,31 @@ SlideWire is a Laravel package for building presentation decks with Livewire. Pr
 - Syntax highlighting with Phiki and theme-aware configuration
 - Reveal-style backgrounds with color, image, and video support
 - Structured theme presets with typography controls
+- Remote presenter control — share a link and every viewer's deck follows the presenter live (polling-based, no extra infrastructure)
+
+### Remote Presenter Control
+
+Drive every connected viewer's deck from a single presenter link — no websocket
+server required. Start a session for a registered presentation:
+
+```bash
+php artisan slidewire:remote pitch --ttl=2h --poll=2s
+```
+
+This prints two URLs:
+
+- **Controller** — a signed link for the presenter. Navigating it publishes the
+  current slide/fragment to the cache.
+- **Viewer** — a shareable link for the audience. Each viewer polls the session
+  and follows the presenter's position.
+
+Modes are selected by query parameters on the existing SlideWire route, so no new
+routes are added and a deck opened without a `remote` parameter behaves exactly as
+a normal solo presentation. Defaults live in the `RemoteConfig` DTO under the
+`remote` key in `config/slidewire.php` (`ttl`, `pollInterval`, `viewerControls`,
+`cacheStore`); `--ttl` and `--poll` override the TTL and viewer poll cadence per
+session. Viewers are locked to the presenter by default — the controller can
+unlock free browsing (and end the session) from an in-deck control.
 
 Access the full documentation [here](https://slidewire.dev).
 

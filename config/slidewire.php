@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Phiki\Theme\Theme;
 use WendellAdriel\SlideWire\DTOs\FontConfig;
 use WendellAdriel\SlideWire\DTOs\HighlightConfig;
+use WendellAdriel\SlideWire\DTOs\RemoteConfig;
 use WendellAdriel\SlideWire\DTOs\SlidesConfig;
 use WendellAdriel\SlideWire\DTOs\ThemeConfig;
 use WendellAdriel\SlideWire\DTOs\ThemeFont;
@@ -131,4 +132,23 @@ return [
         'Inter' => new FontConfig(source: FontSource::Google, weights: [400, 600, 700]),
         'JetBrainsMono' => new FontConfig(source: FontSource::Google, weights: [400, 700]),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Remote Presenter Control
+    |--------------------------------------------------------------------------
+    |
+    | Settings for the optional remote control feature. A deck only enters
+    | remote mode when a `remote` query parameter is present; otherwise these
+    | values are unused and the deck renders exactly as a solo presentation.
+    | Pass `cacheStore` to the DTO to isolate remote state on a specific cache
+    | store (e.g. 'redis'); it defaults to the application's default store.
+    |
+    */
+
+    'remote' => new RemoteConfig(
+        ttl: '2h',             // default session TTL when --ttl is omitted
+        pollInterval: '2s',    // viewer wire:poll cadence (overridable per session with --poll)
+        viewerControls: false, // viewers are locked to the presenter by default; the controller can allow free browsing live
+    ),
 ];

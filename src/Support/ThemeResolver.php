@@ -32,7 +32,7 @@ class ThemeResolver
 
     public function codeFontFamily(): string
     {
-        $slides = config('slidewire.slides', new SlidesConfig());
+        $slides = config('slidewire.slides', new SlidesConfig);
         $font = $slides->highlight->font;
         $fonts = config('slidewire.fonts', []);
 

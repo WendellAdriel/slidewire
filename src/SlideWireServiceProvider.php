@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
 use WendellAdriel\SlideWire\Commands\MakeSlideCommand;
+use WendellAdriel\SlideWire\Commands\SlidewireRemoteCommand;
 use WendellAdriel\SlideWire\Support\CodeBlockPrecompiler;
 use WendellAdriel\SlideWire\Support\CodeHighlighter;
 use WendellAdriel\SlideWire\Support\EffectiveSettingsResolver;
@@ -44,7 +45,7 @@ class SlideWireServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'slidewire');
 
         Blade::componentNamespace('WendellAdriel\\SlideWire\\View\\Components', 'slidewire');
-        Blade::prepareStringsForCompilationUsing(new CodeBlockPrecompiler());
+        Blade::prepareStringsForCompilationUsing(new CodeBlockPrecompiler);
 
         if (! Route::hasMacro('slidewire')) {
             Route::macro('slidewire', fn (string $uri, string $presentation): \Illuminate\Routing\Route => Route::livewire($uri, 'slidewire::presentation-deck')
@@ -75,6 +76,7 @@ class SlideWireServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 MakeSlideCommand::class,
+                SlidewireRemoteCommand::class,
             ]);
         }
     }
